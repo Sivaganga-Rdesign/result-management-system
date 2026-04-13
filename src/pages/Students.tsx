@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { getStudents, addStudent, updateStudent, deleteStudent, type Student } from "@/lib/store";
 import { toast } from "sonner";
 
-const emptyForm = { name: "", rollNo: "", email: "", class: "", section: "" };
+const emptyForm = { name: "", admissionNo: "", rollNo: "", email: "", class: "", section: "" };
 
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -26,11 +26,12 @@ export default function Students() {
     (s) =>
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.rollNo.includes(search) ||
+      s.admissionNo.includes(search) ||
       s.class.includes(search)
   );
 
   const handleSubmit = () => {
-    if (!form.name || !form.rollNo || !form.class) {
+    if (!form.name || !form.rollNo || !form.class || !form.admissionNo) {
       toast.error("Please fill in required fields");
       return;
     }
@@ -48,7 +49,7 @@ export default function Students() {
   };
 
   const handleEdit = (s: Student) => {
-    setForm({ name: s.name, rollNo: s.rollNo, email: s.email, class: s.class, section: s.section });
+    setForm({ name: s.name, admissionNo: s.admissionNo, rollNo: s.rollNo, email: s.email, class: s.class, section: s.section });
     setEditId(s.id);
     setOpen(true);
   };
@@ -81,23 +82,27 @@ export default function Students() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label>Roll No *</Label>
-                  <Input value={form.rollNo} onChange={(e) => setForm({ ...form, rollNo: e.target.value })} />
+                  <Label>Admission No *</Label>
+                  <Input value={form.admissionNo} onChange={(e) => setForm({ ...form, admissionNo: e.target.value })} placeholder="e.g. ADM001" />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  <Label>Roll No *</Label>
+                  <Input value={form.rollNo} onChange={(e) => setForm({ ...form, rollNo: e.target.value })} placeholder="e.g. 2024001" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
                   <Label>Class *</Label>
                   <Input value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })} />
                 </div>
-                <div className="grid gap-2">
-                  <Label>Section</Label>
-                  <Input value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} />
-                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Section</Label>
+                <Input value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} />
               </div>
             </div>
             <DialogFooter>
@@ -113,7 +118,7 @@ export default function Students() {
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search students..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input placeholder="Search by name, roll no, admission no..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <Badge variant="secondary">{filtered.length} students</Badge>
           </div>
@@ -123,6 +128,7 @@ export default function Students() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Admission No</TableHead>
                 <TableHead>Roll No</TableHead>
                 <TableHead>Class</TableHead>
                 <TableHead>Section</TableHead>
@@ -134,6 +140,7 @@ export default function Students() {
               {filtered.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell className="font-medium">{s.name}</TableCell>
+                  <TableCell><Badge variant="outline">{s.admissionNo}</Badge></TableCell>
                   <TableCell><Badge variant="outline">{s.rollNo}</Badge></TableCell>
                   <TableCell>{s.class}</TableCell>
                   <TableCell>{s.section}</TableCell>
@@ -146,7 +153,7 @@ export default function Students() {
               ))}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No students found</TableCell>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No students found</TableCell>
                 </TableRow>
               )}
             </TableBody>

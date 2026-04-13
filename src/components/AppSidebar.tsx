@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, BookOpen, ClipboardList, BarChart3, GraduationCap } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, ClipboardList, BarChart3, GraduationCap, SearchCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -19,6 +19,7 @@ const items = [
   { title: "Students", url: "/students", icon: Users },
   { title: "Subjects", url: "/subjects", icon: BookOpen },
   { title: "Results", url: "/results", icon: ClipboardList },
+  { title: "Search Result", url: "/search-result", icon: SearchCheck },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
 ];
 

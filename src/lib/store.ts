@@ -1,6 +1,7 @@
 export interface Student {
   id: string;
   name: string;
+  admissionNo: string;
   rollNo: string;
   email: string;
   class: string;
@@ -114,14 +115,14 @@ export function seedDemoData(): void {
   if (getStudents().length > 0) return;
 
   const students = [
-    { name: "Aarav Sharma", rollNo: "2024001", email: "aarav@school.edu", class: "10", section: "A" },
-    { name: "Priya Patel", rollNo: "2024002", email: "priya@school.edu", class: "10", section: "A" },
-    { name: "Rahul Singh", rollNo: "2024003", email: "rahul@school.edu", class: "10", section: "B" },
-    { name: "Ananya Gupta", rollNo: "2024004", email: "ananya@school.edu", class: "10", section: "B" },
-    { name: "Vikram Kumar", rollNo: "2024005", email: "vikram@school.edu", class: "10", section: "A" },
-    { name: "Sneha Reddy", rollNo: "2024006", email: "sneha@school.edu", class: "9", section: "A" },
-    { name: "Arjun Nair", rollNo: "2024007", email: "arjun@school.edu", class: "9", section: "B" },
-    { name: "Divya Iyer", rollNo: "2024008", email: "divya@school.edu", class: "9", section: "A" },
+    { name: "Aarav Sharma", admissionNo: "ADM001", rollNo: "2024001", email: "aarav@school.edu", class: "10", section: "A" },
+    { name: "Priya Patel", admissionNo: "ADM002", rollNo: "2024002", email: "priya@school.edu", class: "10", section: "A" },
+    { name: "Rahul Singh", admissionNo: "ADM003", rollNo: "2024003", email: "rahul@school.edu", class: "10", section: "B" },
+    { name: "Ananya Gupta", admissionNo: "ADM004", rollNo: "2024004", email: "ananya@school.edu", class: "10", section: "B" },
+    { name: "Vikram Kumar", admissionNo: "ADM005", rollNo: "2024005", email: "vikram@school.edu", class: "10", section: "A" },
+    { name: "Sneha Reddy", admissionNo: "ADM006", rollNo: "2024006", email: "sneha@school.edu", class: "9", section: "A" },
+    { name: "Arjun Nair", admissionNo: "ADM007", rollNo: "2024007", email: "arjun@school.edu", class: "9", section: "B" },
+    { name: "Divya Iyer", admissionNo: "ADM008", rollNo: "2024008", email: "divya@school.edu", class: "9", section: "A" },
   ].map((s) => ({ ...s, id: generateId(), createdAt: new Date().toISOString() }));
   save("rms_students", students);
 

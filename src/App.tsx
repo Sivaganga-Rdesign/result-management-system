@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Subjects from "./pages/Subjects";
 import Results from "./pages/Results";
+import SearchResult from "./pages/SearchResult";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/students" element={<Students />} />
             <Route path="/subjects" element={<Subjects />} />
             <Route path="/results" element={<Results />} />
+            <Route path="/search-result" element={<SearchResult />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

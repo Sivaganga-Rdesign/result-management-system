@@ -136,6 +136,9 @@ export default function SearchResult() {
         <Card className="animate-fade-in">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3 max-w-lg">
+              <Button variant="ghost" size="icon" onClick={handleNewSearch} className="shrink-0">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input

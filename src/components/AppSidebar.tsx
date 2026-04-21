@@ -1,6 +1,8 @@
-import { LayoutDashboard, Users, BookOpen, ClipboardList, BarChart3, GraduationCap, SearchCheck } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, ClipboardList, BarChart3, GraduationCap, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { adminLogout } from "@/lib/adminAuth";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -11,22 +13,27 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 
 const items = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Students", url: "/students", icon: Users },
-  { title: "Subjects", url: "/subjects", icon: BookOpen },
-  { title: "Results", url: "/results", icon: ClipboardList },
-  { title: "Search Result", url: "/search-result", icon: SearchCheck },
-  { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
+  { title: "Students", url: "/admin/students", icon: Users },
+  { title: "Subjects", url: "/admin/subjects", icon: BookOpen },
+  { title: "Results", url: "/admin/results", icon: ClipboardList },
+  { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    adminLogout();
+    navigate("/admin/login");
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -38,7 +45,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="flex flex-col">
               <span className="font-serif text-lg text-sidebar-foreground">ResultPro</span>
-              <span className="text-xs text-sidebar-foreground/60">Management System</span>
+              <span className="text-xs text-sidebar-foreground/60">Admin Panel</span>
             </div>
           )}
         </div>
@@ -53,7 +60,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end={item.url === "/"}
+                      end={item.url === "/admin/dashboard"}
                       className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
                     >
@@ -67,6 +74,12 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="p-3">
+        <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start text-sidebar-foreground/70 hover:text-destructive">
+          <LogOut className="mr-2 h-4 w-4" />
+          {!collapsed && "Logout"}
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }

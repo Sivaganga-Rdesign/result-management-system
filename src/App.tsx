@@ -4,12 +4,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/Layout";
+import { PublicLayout } from "@/components/PublicLayout";
+import { AdminRoute } from "@/components/AdminRoute";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Subjects from "./pages/Subjects";
 import Results from "./pages/Results";
 import SearchResult from "./pages/SearchResult";
 import Analytics from "./pages/Analytics";
+import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,17 +23,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/students" element={<Students />} />
-            <Route path="/subjects" element={<Subjects />} />
-            <Route path="/results" element={<Results />} />
-            <Route path="/search-result" element={<SearchResult />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Public routes - students can search results */}
+          <Route path="/" element={<PublicLayout><SearchResult /></PublicLayout>} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          
+          {/* Admin routes - protected by password */}
+          <Route path="/admin/dashboard" element={<AdminRoute><Layout><Dashboard /></Layout></AdminRoute>} />
+          <Route path="/admin/students" element={<AdminRoute><Layout><Students /></Layout></AdminRoute>} />
+          <Route path="/admin/subjects" element={<AdminRoute><Layout><Subjects /></Layout></AdminRoute>} />
+          <Route path="/admin/results" element={<AdminRoute><Layout><Results /></Layout></AdminRoute>} />
+          <Route path="/admin/analytics" element={<AdminRoute><Layout><Analytics /></Layout></AdminRoute>} />
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

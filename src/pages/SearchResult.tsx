@@ -33,6 +33,7 @@ export default function SearchResult() {
   const [studentResults, setStudentResults] = useState<Result[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [searched, setSearched] = useState(false);
+  const [showReportCard, setShowReportCard] = useState(false);
 
   const handleSearch = () => {
     if (!rollNo.trim()) return;

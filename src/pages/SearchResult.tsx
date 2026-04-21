@@ -43,6 +43,7 @@ export default function SearchResult() {
     );
     setSearched(true);
     setShowReportCard(false);
+    if (found) {
       setStudent(found);
       setSubjects(getSubjects());
       setStudentResults(getResults().filter((r) => r.studentId === found.id));

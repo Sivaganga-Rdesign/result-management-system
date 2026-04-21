@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { getStudents, getSubjects, getResults, addResult, deleteResult, type Student, type Subject, type Result } from "@/lib/store";
+import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, type Student, type Subject, type Result } from "@/lib/store";
 import { toast } from "sonner";
 
 function getGrade(marks: number, max: number): string {
@@ -37,6 +37,7 @@ export default function Results() {
   const [search, setSearch] = useState("");
   const [filterExam, setFilterExam] = useState<string>("all");
   const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     studentId: "",
@@ -69,10 +70,23 @@ export default function Results() {
       toast.error("Please select student and subject");
       return;
     }
-    addResult(form);
-    toast.success("Result added");
+    if (editId) {
+      updateResult(editId, form);
+      toast.success("Result updated");
+    } else {
+      addResult(form);
+      toast.success("Result added");
+    }
+    setEditId(null);
+    setForm({ studentId: "", subjectId: "", marksObtained: 0, examType: "final", date: new Date().toISOString().split("T")[0] });
     setOpen(false);
     reload();
+  };
+
+  const handleEdit = (r: Result) => {
+    setForm({ studentId: r.studentId, subjectId: r.subjectId, marksObtained: r.marksObtained, examType: r.examType, date: r.date });
+    setEditId(r.id);
+    setOpen(true);
   };
 
   return (
@@ -82,13 +96,13 @@ export default function Results() {
           <h1 className="text-3xl font-serif">Results</h1>
           <p className="text-muted-foreground mt-1">View and manage exam results</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditId(null); setForm({ studentId: "", subjectId: "", marksObtained: 0, examType: "final", date: new Date().toISOString().split("T")[0] }); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Add Result</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="font-serif">Add Result</DialogTitle>
+              <DialogTitle className="font-serif">{editId ? "Edit" : "Add"} Result</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -137,7 +151,7 @@ export default function Results() {
             </div>
             <DialogFooter>
               <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-              <Button onClick={handleSubmit}>Add Result</Button>
+              <Button onClick={handleSubmit}>{editId ? "Update" : "Add"} Result</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -194,6 +208,7 @@ export default function Results() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(r)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => { deleteResult(r.id); toast.success("Deleted"); reload(); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

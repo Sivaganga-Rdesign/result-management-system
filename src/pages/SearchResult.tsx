@@ -189,8 +189,30 @@ export default function SearchResult() {
                   </TableBody>
                 </Table>
               )}
+              {studentResults.length > 0 && !showReportCard && (
+                <div className="mt-4 flex justify-center">
+                  <Button variant="outline" onClick={() => setShowReportCard(true)} className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    View & Download Report Card
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {showReportCard && (
+            <Card className="animate-fade-in">
+              <CardHeader>
+                <CardTitle className="font-serif flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Report Card
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <ReportCard student={student} results={studentResults} subjects={subjects} />
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
     </div>

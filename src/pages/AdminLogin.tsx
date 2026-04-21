@@ -20,7 +20,7 @@ export default function AdminLogin() {
     setTimeout(() => {
       if (adminLogin(password)) {
         toast({ title: "Welcome, Admin!", description: "You have been logged in successfully." });
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard", { replace: true });
       } else {
         toast({ title: "Login Failed", description: "Incorrect password. Please try again.", variant: "destructive" });
       }

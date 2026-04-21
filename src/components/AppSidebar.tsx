@@ -32,7 +32,7 @@ export function AppSidebar() {
 
   const handleLogout = () => {
     adminLogout();
-    navigate("/admin/login");
+    navigate("/admin/login", { replace: true });
   };
 
   return (

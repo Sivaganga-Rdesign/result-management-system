@@ -42,7 +42,7 @@ export default function SearchResult() {
       (s) => s.rollNo.toLowerCase() === rollNo.trim().toLowerCase()
     );
     setSearched(true);
-    if (found) {
+    setShowReportCard(false);
       setStudent(found);
       setSubjects(getSubjects());
       setStudentResults(getResults().filter((r) => r.studentId === found.id));

@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Search, GraduationCap, User, BookOpen, FileText, Award, TrendingUp } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Search, GraduationCap, User, BookOpen, FileText, Award, TrendingUp, ArrowLeft } from "lucide-react";
 import { ReportCard } from "@/components/ReportCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,19 +29,21 @@ function gradeColor(grade: string): string {
 }
 
 export default function SearchResult() {
-  const [rollNo, setRollNo] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryRoll = searchParams.get("roll") || "";
+  const [rollNo, setRollNo] = useState(queryRoll);
   const [student, setStudent] = useState<Student | null>(null);
   const [studentResults, setStudentResults] = useState<Result[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [searched, setSearched] = useState(false);
   const [showReportCard, setShowReportCard] = useState(false);
 
-  const handleSearch = () => {
-    if (!rollNo.trim()) return;
+  const performSearch = useCallback((roll: string) => {
+    if (!roll.trim()) return;
     seedDemoData();
     const allStudents = getStudents();
     const found = allStudents.find(
-      (s) => s.rollNo.toLowerCase() === rollNo.trim().toLowerCase()
+      (s) => s.rollNo.toLowerCase() === roll.trim().toLowerCase()
     );
     setSearched(true);
     setShowReportCard(false);
@@ -52,6 +55,28 @@ export default function SearchResult() {
       setStudent(null);
       setStudentResults([]);
     }
+  }, []);
+
+  // React to URL search param changes (enables browser back button)
+  useEffect(() => {
+    if (queryRoll) {
+      setRollNo(queryRoll);
+      performSearch(queryRoll);
+    } else {
+      setSearched(false);
+      setStudent(null);
+      setStudentResults([]);
+    }
+  }, [queryRoll, performSearch]);
+
+  const handleSearch = () => {
+    if (!rollNo.trim()) return;
+    setSearchParams({ roll: rollNo.trim() });
+  };
+
+  const handleNewSearch = () => {
+    setRollNo("");
+    setSearchParams({});
   };
 
   const totalMarks = studentResults.reduce((sum, r) => sum + r.marksObtained, 0);

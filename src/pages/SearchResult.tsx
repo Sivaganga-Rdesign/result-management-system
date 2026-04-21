@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, GraduationCap, User, BookOpen } from "lucide-react";
+import { Search, GraduationCap, User, BookOpen, FileText } from "lucide-react";
+import { ReportCard } from "@/components/ReportCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

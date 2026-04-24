@@ -13,6 +13,7 @@ import Subjects from "./pages/Subjects";
 import Results from "./pages/Results";
 import SearchResult from "./pages/SearchResult";
 import Analytics from "./pages/Analytics";
+import Rankings from "./pages/Rankings";
 import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 

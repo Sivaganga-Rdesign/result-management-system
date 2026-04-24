@@ -141,7 +141,7 @@ export default function Results() {
           <h1 className="text-3xl font-serif">Results</h1>
           <p className="text-muted-foreground mt-1">View and manage exam results</p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditId(null); setForm({ studentId: "", subjectId: "", marksObtained: "", examType: "final", date: new Date().toISOString().split("T")[0] }); } }}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditId(null); setForm({ studentId: "", subjectId: "", marksObtained: "", examType: "final", date: new Date().toISOString().split("T")[0] }); } else if (!editId) { setForm((f) => ({ ...f, date: new Date().toISOString().split("T")[0] })); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Add Result</Button>
           </DialogTrigger>

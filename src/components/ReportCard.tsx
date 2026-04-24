@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getSettings, type Student, type Subject, type Result } from "@/lib/store";
+import { getSettings, getExamTypeLabel, type Student, type Subject, type Result } from "@/lib/store";
 import { evaluateResults } from "@/lib/resultCalc";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";

@@ -206,7 +206,7 @@ export function seedDemoData(): void {
   ].map((s) => ({ ...s, id: generateId() }));
   save("rms_subjects", subjects);
 
-  const examTypes: Result["examType"][] = ["midterm", "final", "assignment"];
+  const examTypes: string[] = ["midterm", "final", "assignment"];
   const results: Result[] = [];
   for (const student of students) {
     for (const subject of subjects) {

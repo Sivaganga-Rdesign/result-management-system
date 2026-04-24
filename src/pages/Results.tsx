@@ -322,12 +322,15 @@ export default function Results() {
               <Input placeholder="Search by student or subject..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <Select value={filterExam} onValueChange={setFilterExam}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Exams</SelectItem>
-                <SelectItem value="midterm">Midterm</SelectItem>
-                <SelectItem value="final">Final</SelectItem>
-                <SelectItem value="assignment">Assignment</SelectItem>
+                {Array.from(new Set([
+                  ...examTypes.map((t) => t.id),
+                  ...results.map((r) => r.examType),
+                ])).map((id) => (
+                  <SelectItem key={id} value={id}>{getExamTypeLabel(id)}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Badge variant="secondary">{filtered.length} {filtered.length === 1 ? "result" : "results"}</Badge>

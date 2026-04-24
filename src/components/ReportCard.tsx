@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSettings, type Student, type Subject, type Result } from "@/lib/store";
+import { evaluateResults } from "@/lib/resultCalc";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -17,8 +18,9 @@ function getGrade(marks: number, max: number): string {
   return "F";
 }
 
-function remarkFor(pct: number, allPassed: boolean): { label: string; color: string } {
-  if (!allPassed) return { label: "Needs Improvement — has unsuccessful subjects", color: "#dc2626" };
+function remarkFor(pct: number, status: "PASS" | "ATKT" | "FAIL"): { label: string; color: string } {
+  if (status === "FAIL") return { label: "Needs Improvement — multiple unsuccessful subjects.", color: "#dc2626" };
+  if (status === "ATKT") return { label: "ATKT — must reappear for failed subjects.", color: "#a16207" };
   if (pct >= 90) return { label: "Outstanding performance — keep it up!", color: "#15803d" };
   if (pct >= 75) return { label: "Excellent — consistent and strong work.", color: "#15803d" };
   if (pct >= 60) return { label: "Good — room to push further.", color: "#1e3a5f" };
@@ -36,22 +38,25 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const settings = getSettings();
 
-  const totalMarks = results.reduce((s, r) => s + r.marksObtained, 0);
-  const totalMax = results.reduce((s, r) => {
-    const sub = subjects.find((x) => x.id === r.subjectId);
-    return s + (sub?.maxMarks || 0);
-  }, 0);
-  const overallPctNum = totalMax > 0 ? (totalMarks / totalMax) * 100 : 0;
+  const evaluation = evaluateResults(results, subjects);
+  const evalById = new Map(evaluation.evaluations.map((e) => [e.result.id, e]));
+  const totalMarks = evaluation.totalMarks;
+  const totalMax = evaluation.totalMax;
+  const overallPctNum = evaluation.percentage;
   const overallPct = overallPctNum.toFixed(1);
   const overallGrade = getGrade(totalMarks, totalMax || 1);
 
-  const passedCount = results.filter((r) => {
-    const sub = subjects.find((s) => s.id === r.subjectId);
-    return sub && r.marksObtained >= sub.passMarks;
-  }).length;
-  const failedCount = results.length - passedCount;
-  const allPassed = failedCount === 0 && results.length > 0;
-  const remark = remarkFor(overallPctNum, allPassed);
+  const passedCount = evaluation.evaluations.filter((e) => e.passed).length;
+  const failedCount = evaluation.failedCount;
+  const finalStatus = evaluation.status;
+  const remark = remarkFor(overallPctNum, finalStatus);
+
+  const statusColors: Record<typeof finalStatus, { bg: string; fg: string; border: string }> = {
+    PASS: { bg: "#dcfce7", fg: "#15803d", border: "#86efac" },
+    ATKT: { bg: "#fef3c7", fg: "#a16207", border: "#fcd34d" },
+    FAIL: { bg: "#fee2e2", fg: "#dc2626", border: "#fca5a5" },
+  };
+  const statusStyle = statusColors[finalStatus];
 
   const handleDownloadPdf = async () => {
     if (!cardRef.current) return;

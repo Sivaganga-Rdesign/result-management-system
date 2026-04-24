@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, type Student, type Subject, type Result } from "@/lib/store";
 import { toast } from "sonner";
 
@@ -56,6 +59,8 @@ export default function Results() {
   const [filterExam, setFilterExam] = useState<string>("all");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [studentPickerOpen, setStudentPickerOpen] = useState(false);
+  const [studentQuery, setStudentQuery] = useState("");
 
   const [form, setForm] = useState({
     studentId: "",
@@ -135,14 +140,80 @@ export default function Results() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label>Student</Label>
-                <Select value={form.studentId} onValueChange={(v) => setForm({ ...form, studentId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
-                  <SelectContent>
-                    {students.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name} ({s.rollNo})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={studentPickerOpen} onOpenChange={setStudentPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={studentPickerOpen}
+                      className="justify-between font-normal"
+                    >
+                      {form.studentId
+                        ? (() => {
+                            const s = students.find((x) => x.id === form.studentId);
+                            return s ? `${s.name} (${s.rollNo})` : "Select student";
+                          })()
+                        : "Select student"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command
+                      filter={(value, search) => {
+                        // Prefix-match: items only show if name/roll starts with the query
+                        if (!search) return 1;
+                        return value.toLowerCase().startsWith(search.toLowerCase()) ? 1 : 0;
+                      }}
+                    >
+                      <CommandInput
+                        placeholder="Type a letter (e.g. 'a' shows all A names)..."
+                        value={studentQuery}
+                        onValueChange={setStudentQuery}
+                      />
+                      <CommandList>
+                        <CommandEmpty>No matching student.</CommandEmpty>
+                        <CommandGroup>
+                          {students.map((s) => {
+                            const q = studentQuery.toLowerCase();
+                            const isPrefix = q && s.name.toLowerCase().startsWith(q);
+                            return (
+                              <CommandItem
+                                key={s.id}
+                                value={`${s.name} ${s.rollNo}`}
+                                onSelect={() => {
+                                  setForm({ ...form, studentId: s.id });
+                                  setStudentPickerOpen(false);
+                                  setStudentQuery("");
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    form.studentId === s.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span className="flex-1">
+                                  {isPrefix ? (
+                                    <>
+                                      <mark className="bg-secondary/40 text-foreground rounded px-0.5">
+                                        {s.name.slice(0, q.length)}
+                                      </mark>
+                                      {s.name.slice(q.length)}
+                                    </>
+                                  ) : (
+                                    s.name
+                                  )}
+                                  <span className="text-muted-foreground ml-2 text-xs">({s.rollNo})</span>
+                                </span>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="grid gap-2">
                 <Label>Subject</Label>

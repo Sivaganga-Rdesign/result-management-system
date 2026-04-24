@@ -41,17 +41,18 @@ export default function Dashboard() {
 
   // Grade distribution
   const gradeRanges = [
-    { name: "A (90+)", min: 90, max: 100 },
-    { name: "B (75-89)", min: 75, max: 89 },
-    { name: "C (60-74)", min: 60, max: 74 },
-    { name: "D (35-59)", min: 35, max: 59 },
-    { name: "F (<35)", min: 0, max: 34 },
+    { name: "A", range: "90-100", min: 90, max: 100 },
+    { name: "B", range: "75-89", min: 75, max: 89 },
+    { name: "C", range: "60-74", min: 60, max: 74 },
+    { name: "D", range: "35-59", min: 35, max: 59 },
+    { name: "F", range: "<35", min: 0, max: 34 },
   ];
 
   // For grade distribution, use final exam results
   const finalResults = results.filter((r) => r.examType === "final");
   const gradeDist = gradeRanges.map((g) => ({
     name: g.name,
+    range: g.range,
     value: finalResults.filter((r) => r.marksObtained >= g.min && r.marksObtained <= g.max).length,
   }));
 
@@ -100,12 +101,12 @@ export default function Dashboard() {
           <CardContent className="flex justify-center">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={gradeDist} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={4} dataKey="value" label={({ value }) => (value > 0 ? `${value}` : "")}>
+                <Pie data={gradeDist} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={4} dataKey="value" label={({ name, range, value }) => (value > 0 ? `${name} (${range})` : "")}>
                   {gradeDist.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value: number, _n, p: { payload?: { name: string; range: string } }) => [`${value} students`, `Grade ${p.payload?.name} (${p.payload?.range})`]} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

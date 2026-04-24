@@ -11,6 +11,24 @@ import { Badge } from "@/components/ui/badge";
 import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, type Student, type Subject, type Result } from "@/lib/store";
 import { toast } from "sonner";
 
+function highlightMatch(text: string, query: string, exact: boolean) {
+  if (!query) return text;
+  const q = query.toLowerCase();
+  const t = text.toLowerCase();
+  if (exact && t === q) {
+    return <mark className="bg-secondary text-secondary-foreground rounded px-1">{text}</mark>;
+  }
+  if (!exact && t.startsWith(q)) {
+    return (
+      <>
+        <mark className="bg-secondary/40 text-foreground rounded px-0.5">{text.slice(0, query.length)}</mark>
+        {text.slice(query.length)}
+      </>
+    );
+  }
+  return text;
+}
+
 function getGrade(marks: number, max: number): string {
   const pct = (marks / max) * 100;
   if (pct >= 90) return "A+";

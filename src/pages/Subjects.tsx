@@ -29,6 +29,11 @@ export default function Subjects() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState(getSettings);
 
+  // Exam types manager
+  const [examTypesOpen, setExamTypesOpen] = useState(false);
+  const [examTypes, setExamTypes] = useState<ExamType[]>(() => getSettings().examTypes);
+  const [newExamLabel, setNewExamLabel] = useState("");
+
   const reload = () => setSubjects(getSubjects());
   useEffect(reload, []);
 

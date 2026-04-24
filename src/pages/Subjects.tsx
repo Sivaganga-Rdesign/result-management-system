@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Settings as SettingsIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Settings as SettingsIcon, ListChecks, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from "@/components/ui/badge";
 import {
   getSubjects, addSubject, updateSubject, deleteSubject,
-  getSettings, saveSettings,
-  type Subject,
+  getSettings, saveSettings, slugifyExamType,
+  type Subject, type ExamType,
 } from "@/lib/store";
 import { toast } from "sonner";
 

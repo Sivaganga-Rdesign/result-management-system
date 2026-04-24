@@ -65,7 +65,7 @@ export default function Results() {
   const [form, setForm] = useState({
     studentId: "",
     subjectId: "",
-    marksObtained: 0,
+    marksObtained: "" as string,
     examType: "final" as Result["examType"],
     date: new Date().toISOString().split("T")[0],
   });
@@ -99,25 +99,37 @@ export default function Results() {
     }
     const subject = subjects.find((s) => s.id === form.subjectId);
     const max = subject?.maxMarks ?? 100;
-    if (form.marksObtained < 0 || form.marksObtained > max) {
+    const marks = Number(form.marksObtained);
+    if (form.marksObtained === "" || Number.isNaN(marks)) {
+      toast.error("Please enter marks");
+      return;
+    }
+    if (marks < 0 || marks > max) {
       toast.error(`Marks must be between 0 and ${max}`);
       return;
     }
+    const payload = {
+      studentId: form.studentId,
+      subjectId: form.subjectId,
+      marksObtained: marks,
+      examType: form.examType,
+      date: form.date,
+    };
     if (editId) {
-      updateResult(editId, form);
+      updateResult(editId, payload);
       toast.success("Result updated");
     } else {
-      addResult(form);
+      addResult(payload);
       toast.success("Result added");
     }
     setEditId(null);
-    setForm({ studentId: "", subjectId: "", marksObtained: 0, examType: "final", date: new Date().toISOString().split("T")[0] });
+    setForm({ studentId: "", subjectId: "", marksObtained: "", examType: "final", date: new Date().toISOString().split("T")[0] });
     setOpen(false);
     reload();
   };
 
   const handleEdit = (r: Result) => {
-    setForm({ studentId: r.studentId, subjectId: r.subjectId, marksObtained: r.marksObtained, examType: r.examType, date: r.date });
+    setForm({ studentId: r.studentId, subjectId: r.subjectId, marksObtained: String(r.marksObtained), examType: r.examType, date: r.date });
     setEditId(r.id);
     setOpen(true);
   };
@@ -129,7 +141,7 @@ export default function Results() {
           <h1 className="text-3xl font-serif">Results</h1>
           <p className="text-muted-foreground mt-1">View and manage exam results</p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditId(null); setForm({ studentId: "", subjectId: "", marksObtained: 0, examType: "final", date: new Date().toISOString().split("T")[0] }); } }}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditId(null); setForm({ studentId: "", subjectId: "", marksObtained: "", examType: "final", date: new Date().toISOString().split("T")[0] }); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Add Result</Button>
           </DialogTrigger>
@@ -231,16 +243,25 @@ export default function Results() {
                   <Label>Marks Obtained</Label>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={0}
                     max={form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100}
+                    placeholder="0"
                     value={form.marksObtained}
                     onChange={(e) => {
+                      const raw = e.target.value;
+                      // Allow empty so users can clear and retype
+                      if (raw === "") {
+                        setForm({ ...form, marksObtained: "" });
+                        return;
+                      }
+                      // Strip leading zeros (e.g. "05" -> "5", but keep "0")
+                      const cleaned = raw.replace(/^0+(?=\d)/, "");
+                      const num = Number(cleaned);
+                      if (Number.isNaN(num)) return;
                       const max = form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100;
-                      let val = Number(e.target.value);
-                      if (Number.isNaN(val)) val = 0;
-                      if (val < 0) val = 0;
-                      if (val > max) val = max;
-                      setForm({ ...form, marksObtained: val });
+                      if (num < 0 || num > max) return;
+                      setForm({ ...form, marksObtained: cleaned });
                     }}
                   />
                 </div>
@@ -285,7 +306,7 @@ export default function Results() {
                 <SelectItem value="assignment">Assignment</SelectItem>
               </SelectContent>
             </Select>
-            <Badge variant="secondary">{Math.min(filtered.length, 50)} of {filtered.length} results</Badge>
+            <Badge variant="secondary">{filtered.length} {filtered.length === 1 ? "result" : "results"}</Badge>
           </div>
           <Table>
             <TableHeader>

@@ -1,6 +1,7 @@
 import { GraduationCap, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,12 +13,15 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           </div>
           <span className="font-serif text-lg font-semibold">ResultPro</span>
         </Link>
-        <Link to="/admin/login">
-          <Button variant="outline" size="sm">
-            <Shield className="mr-2 h-4 w-4" />
-            Admin Login
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link to="/admin/login">
+            <Button variant="outline" size="sm">
+              <Shield className="mr-2 h-4 w-4" />
+              Admin Login
+            </Button>
+          </Link>
+        </div>
       </header>
       <main className="flex-1 p-6 max-w-4xl mx-auto w-full">{children}</main>
     </div>

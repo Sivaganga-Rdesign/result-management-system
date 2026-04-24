@@ -22,13 +22,15 @@ export default function Students() {
   const reload = () => setStudents(getStudents());
   useEffect(reload, []);
 
-  const filtered = students.filter(
-    (s) =>
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.rollNo.includes(search) ||
-      s.admissionNo.includes(search) ||
-      s.class.includes(search)
-  );
+  const filtered = students.filter((s) => {
+    const q = search.toLowerCase();
+    return (
+      (s.name ?? "").toLowerCase().includes(q) ||
+      (s.rollNo ?? "").toLowerCase().includes(q) ||
+      (s.admissionNo ?? "").toLowerCase().includes(q) ||
+      (s.class ?? "").toLowerCase().includes(q)
+    );
+  });
 
   const handleSubmit = () => {
     if (!form.name || !form.rollNo || !form.class || !form.admissionNo) {

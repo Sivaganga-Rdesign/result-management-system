@@ -157,7 +157,7 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
                       }}>Grace +{graceApplied}</span>
                     )}
                   </td>
-                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", textTransform: "capitalize" }}>{r.examType}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center" }}>{getExamTypeLabel(r.examType)}</td>
                   <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", fontWeight: 600 }}>
                     {graceApplied > 0 ? (
                       <span>

@@ -255,11 +255,24 @@ export default function Rankings() {
                           <Badge variant="outline">{e.grade}</Badge>
                         </TableCell>
                         <TableCell>
-                          {e.passedAll ? (
-                            <Badge variant="outline" className="bg-success/10 text-success border-success/20">Pass</Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Fail</Badge>
-                          )}
+                          <TooltipProvider delayDuration={150}>
+                            <UITooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className={`${statusBadgeClass(e.status)} font-bold gap-1`}>
+                                  {e.status}
+                                  {e.failedCount > 0 && (
+                                    <span className="font-normal opacity-80">· {e.failedCount} failed</span>
+                                  )}
+                                </Badge>
+                              </TooltipTrigger>
+                              {e.status === "ATKT" && (
+                                <TooltipContent>{ATKT_TOOLTIP}</TooltipContent>
+                              )}
+                              {e.graceUsed > 0 && e.status !== "ATKT" && (
+                                <TooltipContent>Grace applied to {e.graceUsed} subject{e.graceUsed > 1 ? "s" : ""}.</TooltipContent>
+                              )}
+                            </UITooltip>
+                          </TooltipProvider>
                         </TableCell>
                       </TableRow>
                     ))}

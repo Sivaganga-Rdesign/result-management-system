@@ -275,9 +275,9 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
               margin: "2px 0 0",
               fontWeight: 700,
               fontSize: "16px",
-              color: allPassed ? "#16a34a" : "#dc2626",
+              color: statusStyle.fg,
             }}>
-              {allPassed ? "PASS" : "FAIL"}
+              {finalStatus}
             </p>
           </div>
         </div>

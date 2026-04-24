@@ -296,56 +296,157 @@ export default function SearchResult() {
             </CardContent>
           </Card>
 
-          {/* Performance Line Graph */}
+          {/* Smart Analytics + Performance Chart */}
           {studentResults.length > 0 && (() => {
-            const chartData = subjects
+            // Compute per-subject percentage based on FINAL exam (fallback: best of any)
+            const perSubject = subjects
               .map((sub) => {
                 const subRes = studentResults.filter((r) => r.subjectId === sub.id);
+                if (subRes.length === 0) return null;
+                const finalRes = subRes.find((r) => r.examType === "final") ?? subRes[0];
+                const pct = Math.round((finalRes.marksObtained / sub.maxMarks) * 100);
                 const get = (type: Result["examType"]) => {
                   const found = subRes.find((r) => r.examType === type);
                   return found ? Math.round((found.marksObtained / sub.maxMarks) * 100) : null;
                 };
-                if (subRes.length === 0) return null;
                 return {
-                  name: sub.name,
+                  subject: sub,
+                  pct,
+                  marks: finalRes.marksObtained,
+                  max: sub.maxMarks,
                   Midterm: get("midterm"),
                   Final: get("final"),
                   Assignment: get("assignment"),
                 };
               })
-              .filter(Boolean) as Array<{ name: string; Midterm: number | null; Final: number | null; Assignment: number | null }>;
+              .filter((x): x is NonNullable<typeof x> => x !== null);
 
-            if (chartData.length === 0) return null;
+            if (perSubject.length === 0) return null;
+
+            const sortedDesc = [...perSubject].sort((a, b) => b.pct - a.pct);
+            const highest = sortedDesc[0];
+            const lowest = sortedDesc[sortedDesc.length - 1];
+            const avg = Math.round(perSubject.reduce((a, b) => a + b.pct, 0) / perSubject.length);
+            const weak = perSubject.filter((p) => p.pct < 50);
+
+            // Trend: compare Midterm avg vs Final avg
+            const midAvg = (() => {
+              const arr = perSubject.map((p) => p.Midterm).filter((x): x is number => x !== null);
+              return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+            })();
+            const finalAvg = (() => {
+              const arr = perSubject.map((p) => p.Final).filter((x): x is number => x !== null);
+              return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+            })();
+            let trend: { label: string; color: string; Icon: typeof Minus } = { label: "Consistent", color: "text-info", Icon: Minus };
+            if (midAvg !== null && finalAvg !== null) {
+              const diff = finalAvg - midAvg;
+              if (diff > 3) trend = { label: "Improving", color: "text-success", Icon: ArrowUpRight };
+              else if (diff < -3) trend = { label: "Declining", color: "text-destructive", Icon: ArrowDownRight };
+            }
+
+            const chartData = perSubject.map((p) => ({
+              name: p.subject.name,
+              Midterm: p.Midterm,
+              Final: p.Final,
+              Assignment: p.Assignment,
+            }));
+
+            // Build a "Trend" series across subjects (Final %) for high/low markers
+            const trendSeries = perSubject.map((p) => ({ name: p.subject.name, value: p.Final ?? p.pct }));
+            const tHigh = trendSeries.reduce((m, x) => (x.value > m.value ? x : m), trendSeries[0]);
+            const tLow = trendSeries.reduce((m, x) => (x.value < m.value ? x : m), trendSeries[0]);
 
             return (
-              <Card className="animate-fade-in">
-                <CardHeader>
-                  <CardTitle className="font-serif flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    Performance Across Subjects
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-                      <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} label={{ value: "%", angle: -90, position: "insideLeft", style: { fill: "hsl(var(--muted-foreground))" } }} />
-                      <Tooltip
-                        contentStyle={{
-                          background: "hsl(var(--background))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
-                      />
-                      <Legend />
-                      <Line type="monotone" dataKey="Midterm" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
-                      <Line type="monotone" dataKey="Final" stroke="hsl(var(--secondary))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
-                      <Line type="monotone" dataKey="Assignment" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+              <>
+                {/* Smart Analytics */}
+                <Card className="animate-fade-in border-secondary/30">
+                  <CardHeader>
+                    <CardTitle className="font-serif flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-secondary" />
+                      Smart Analytics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="rounded-lg border border-success/30 bg-success/5 p-3">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Highest</p>
+                        <p className="font-semibold mt-1">{highest.subject.name}</p>
+                        <p className="text-2xl font-serif font-bold text-success">{highest.pct}%</p>
+                      </div>
+                      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Lowest</p>
+                        <p className="font-semibold mt-1">{lowest.subject.name}</p>
+                        <p className="text-2xl font-serif font-bold text-destructive">{lowest.pct}%</p>
+                      </div>
+                      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Average</p>
+                        <p className="font-semibold mt-1">Across {perSubject.length} subjects</p>
+                        <p className="text-2xl font-serif font-bold text-primary">{avg}%</p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-muted/30 p-3">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Trend</p>
+                        <p className="font-semibold mt-1">Mid → Final</p>
+                        <p className={`text-2xl font-serif font-bold flex items-center gap-1 ${trend.color}`}>
+                          <trend.Icon className="h-5 w-5" />
+                          {trend.label}
+                        </p>
+                      </div>
+                    </div>
+                    {weak.length > 0 && (
+                      <div className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm">
+                        <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                        <p>
+                          <span className="font-semibold">Weak subject{weak.length > 1 ? "s" : ""}:</span>{" "}
+                          {weak.map((w) => `${w.subject.name} (${w.pct}%)`).join(", ")} — needs attention.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Line chart with grade zones + high/low markers */}
+                <Card className="animate-fade-in">
+                  <CardHeader>
+                    <CardTitle className="font-serif flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      Performance Across Subjects
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Background bands show grade zones (A / B / C / Below).
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={340}>
+                      <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        {/* Grade zones */}
+                        <ReferenceArea y1={75} y2={100} fill="hsl(var(--success))" fillOpacity={0.06} />
+                        <ReferenceArea y1={60} y2={75} fill="hsl(var(--info))" fillOpacity={0.06} />
+                        <ReferenceArea y1={35} y2={60} fill="hsl(var(--warning))" fillOpacity={0.06} />
+                        <ReferenceArea y1={0} y2={35} fill="hsl(var(--destructive))" fillOpacity={0.06} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} label={{ value: "%", angle: -90, position: "insideLeft", style: { fill: "hsl(var(--muted-foreground))" } }} />
+                        <Tooltip
+                          contentStyle={{
+                            background: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                          formatter={(value: number | null, name) => value === null ? ["—", name] : [`${value}%`, name]}
+                        />
+                        <Legend />
+                        <Line type="monotone" dataKey="Midterm" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                        <Line type="monotone" dataKey="Final" stroke="hsl(var(--secondary))" strokeWidth={2.5} dot={{ r: 5 }} connectNulls />
+                        <Line type="monotone" dataKey="Assignment" stroke="hsl(var(--info))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                        {/* Highlight high/low on Final */}
+                        {tHigh && <ReferenceDot x={tHigh.name} y={tHigh.value} r={7} fill="hsl(var(--success))" stroke="hsl(var(--background))" strokeWidth={2} ifOverflow="extendDomain" label={{ value: "High", position: "top", fill: "hsl(var(--success))", fontSize: 11 }} />}
+                        {tLow && tLow.name !== tHigh?.name && <ReferenceDot x={tLow.name} y={tLow.value} r={7} fill="hsl(var(--destructive))" stroke="hsl(var(--background))" strokeWidth={2} ifOverflow="extendDomain" label={{ value: "Low", position: "bottom", fill: "hsl(var(--destructive))", fontSize: 11 }} />}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </>
             );
           })()}
 

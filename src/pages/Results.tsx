@@ -338,7 +338,7 @@ export default function Results() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.slice(0, 50).map((r) => {
+              {pageItems.map((r) => {
                 const student = students.find((s) => s.id === r.studentId);
                 const subject = subjects.find((s) => s.id === r.subjectId);
                 const grade = subject ? getGrade(r.marksObtained, subject.maxMarks) : "-";
@@ -346,7 +346,7 @@ export default function Results() {
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{student ? highlightMatch(student.name, search, hasExactNameMatch) : "Unknown"}</TableCell>
-                    <TableCell>{subject ? highlightMatch(subject.name, search, hasExactSubjectMatch) : "Unknown"}</TableCell>
+                    <TableCell className="text-foreground">{subject ? highlightMatch(subject.name, search, hasExactSubjectMatch) : "Unknown"}</TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{r.examType}</Badge></TableCell>
                     <TableCell>{r.marksObtained}/{subject?.maxMarks}</TableCell>
                     <TableCell><Badge className={gradeColor(grade)} variant="outline">{grade}</Badge></TableCell>
@@ -373,6 +373,36 @@ export default function Results() {
               )}
             </TableBody>
           </Table>
+
+          {filtered.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between mt-4 flex-wrap gap-2">
+              <p className="text-sm text-muted-foreground">
+                Showing <span className="font-medium text-foreground">{pageStart + 1}</span>–
+                <span className="font-medium text-foreground">{Math.min(pageStart + PAGE_SIZE, filtered.length)}</span>
+              </p>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={currentPage === 1}>« First</Button>
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .map((p, i, arr) => (
+                    <span key={p} className="flex items-center">
+                      {i > 0 && arr[i - 1] !== p - 1 && <span className="px-1 text-muted-foreground">…</span>}
+                      <Button
+                        variant={p === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(p)}
+                        className="min-w-9"
+                      >
+                        {p}
+                      </Button>
+                    </span>
+                  ))}
+                <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+                <Button variant="outline" size="sm" onClick={() => setPage(totalPages)} disabled={currentPage === totalPages}>Last »</Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

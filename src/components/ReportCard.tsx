@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getSettings, type Student, type Subject, type Result } from "@/lib/store";
+import { getSettings, getExamTypeLabel, type Student, type Subject, type Result } from "@/lib/store";
 import { evaluateResults } from "@/lib/resultCalc";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -157,7 +157,7 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
                       }}>Grace +{graceApplied}</span>
                     )}
                   </td>
-                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", textTransform: "capitalize" }}>{r.examType}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center" }}>{getExamTypeLabel(r.examType)}</td>
                   <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", fontWeight: 600 }}>
                     {graceApplied > 0 ? (
                       <span>
@@ -239,7 +239,7 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
             </p>
             <p style={{ margin: "4px 0 0", color: "#7f1d1d" }}>
               {evaluation.failedEvaluations
-                .map((e) => `${e.subject.name} (${e.effectiveMarks}/${e.subject.maxMarks}, ${e.result.examType})`)
+                .map((e) => `${e.subject.name} (${e.effectiveMarks}/${e.subject.maxMarks}, ${getExamTypeLabel(e.result.examType)})`)
                 .join(" • ")}
             </p>
           </div>

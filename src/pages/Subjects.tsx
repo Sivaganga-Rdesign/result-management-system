@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Settings as SettingsIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Settings as SettingsIcon, ListChecks, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from "@/components/ui/badge";
 import {
   getSubjects, addSubject, updateSubject, deleteSubject,
-  getSettings, saveSettings,
-  type Subject,
+  getSettings, saveSettings, slugifyExamType,
+  type Subject, type ExamType,
 } from "@/lib/store";
 import { toast } from "sonner";
 
@@ -28,6 +28,11 @@ export default function Subjects() {
   // Settings dialog
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState(getSettings);
+
+  // Exam types manager
+  const [examTypesOpen, setExamTypesOpen] = useState(false);
+  const [examTypes, setExamTypes] = useState<ExamType[]>(() => getSettings().examTypes);
+  const [newExamLabel, setNewExamLabel] = useState("");
 
   const reload = () => setSubjects(getSubjects());
   useEffect(reload, []);
@@ -82,6 +87,55 @@ export default function Subjects() {
     setForm(buildEmptyForm());
   };
 
+  // ----- Exam types manager -----
+  const addExamType = () => {
+    const label = newExamLabel.trim();
+    if (!label) {
+      toast.error("Enter an exam type name");
+      return;
+    }
+    if (label.length > 40) {
+      toast.error("Name is too long (max 40 chars)");
+      return;
+    }
+    const id = slugifyExamType(label);
+    if (!id) {
+      toast.error("Use letters or numbers in the name");
+      return;
+    }
+    if (examTypes.some((t) => t.id === id)) {
+      toast.error("This exam type already exists");
+      return;
+    }
+    setExamTypes([...examTypes, { id, label }]);
+    setNewExamLabel("");
+  };
+
+  const removeExamType = (id: string) => {
+    if (examTypes.length <= 1) {
+      toast.error("At least one exam type is required");
+      return;
+    }
+    setExamTypes(examTypes.filter((t) => t.id !== id));
+  };
+
+  const renameExamType = (id: string, label: string) => {
+    setExamTypes(examTypes.map((t) => (t.id === id ? { ...t, label } : t)));
+  };
+
+  const handleSaveExamTypes = () => {
+    const cleaned = examTypes
+      .map((t) => ({ ...t, label: t.label.trim() }))
+      .filter((t) => t.label.length > 0);
+    if (cleaned.length === 0) {
+      toast.error("Add at least one exam type");
+      return;
+    }
+    saveSettings({ examTypes: cleaned });
+    toast.success("Exam types saved");
+    setExamTypesOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -90,6 +144,83 @@ export default function Subjects() {
           <p className="text-muted-foreground mt-1">Manage course subjects</p>
         </div>
         <div className="flex items-center gap-2">
+          <Dialog
+            open={examTypesOpen}
+            onOpenChange={(o) => {
+              setExamTypesOpen(o);
+              if (o) { setExamTypes(getSettings().examTypes); setNewExamLabel(""); }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button variant="outline"><ListChecks className="mr-2 h-4 w-4" />Exam Types</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-serif">Manage Exam Types</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <p className="text-sm text-muted-foreground">
+                  These appear in the "Exam Type" dropdown when adding results
+                  (e.g. Midterm, Semester Final, Practical, Unit Test, CA1, CA2, Project).
+                </p>
+
+                <div className="grid gap-2">
+                  <Label>Add new exam type</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="e.g. Viva, Lab Test, Pre-Board"
+                      value={newExamLabel}
+                      maxLength={40}
+                      onChange={(e) => setNewExamLabel(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addExamType(); } }}
+                    />
+                    <Button type="button" onClick={addExamType}>
+                      <Plus className="mr-1 h-4 w-4" />Add
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Current exam types ({examTypes.length})</Label>
+                  <div className="rounded-md border divide-y max-h-72 overflow-auto">
+                    {examTypes.map((t) => (
+                      <div key={t.id} className="flex items-center gap-2 p-2">
+                        <Input
+                          value={t.label}
+                          maxLength={40}
+                          onChange={(e) => renameExamType(t.id, e.target.value)}
+                          className="h-9"
+                        />
+                        <Badge variant="outline" className="font-mono text-xs shrink-0">{t.id}</Badge>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => removeExamType(t.id)}
+                          aria-label={`Remove ${t.label}`}
+                        >
+                          <X className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                    {examTypes.length === 0 && (
+                      <p className="text-sm text-muted-foreground p-3 text-center">No exam types yet.</p>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Removing an exam type does not delete results that already use it —
+                    those results keep their original label.
+                  </p>
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                <Button onClick={handleSaveExamTypes}>Save Exam Types</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={settingsOpen} onOpenChange={(o) => { setSettingsOpen(o); if (o) setSettings(getSettings()); }}>
             <DialogTrigger asChild>
               <Button variant="outline"><SettingsIcon className="mr-2 h-4 w-4" />Defaults</Button>

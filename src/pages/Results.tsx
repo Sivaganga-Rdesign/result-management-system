@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, type Student, type Subject, type Result } from "@/lib/store";
+import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, getSettings, getExamTypeLabel, type Student, type Subject, type Result, type ExamType } from "@/lib/store";
 import { toast } from "sonner";
 
 function highlightMatch(text: string, query: string, exact: boolean) {
@@ -55,6 +55,7 @@ export default function Results() {
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [results, setResults] = useState<Result[]>([]);
+  const [examTypes, setExamTypes] = useState<ExamType[]>([]);
   const [search, setSearch] = useState("");
   const [filterExam, setFilterExam] = useState<string>("all");
   const [open, setOpen] = useState(false);
@@ -64,18 +65,21 @@ export default function Results() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  const [form, setForm] = useState({
+  const defaultExamType = () => getSettings().examTypes[0]?.id ?? "final";
+
+  const [form, setForm] = useState(() => ({
     studentId: "",
     subjectId: "",
     marksObtained: "" as string,
-    examType: "final" as Result["examType"],
+    examType: defaultExamType(),
     date: new Date().toISOString().split("T")[0],
-  });
+  }));
 
   const reload = () => {
     setStudents(getStudents());
     setSubjects(getSubjects());
     setResults(getResults());
+    setExamTypes(getSettings().examTypes);
   };
   useEffect(reload, []);
 
@@ -133,7 +137,7 @@ export default function Results() {
       toast.success("Result added");
     }
     setEditId(null);
-    setForm({ studentId: "", subjectId: "", marksObtained: "", examType: "final", date: new Date().toISOString().split("T")[0] });
+    setForm({ studentId: "", subjectId: "", marksObtained: "", examType: defaultExamType(), date: new Date().toISOString().split("T")[0] });
     setOpen(false);
     reload();
   };
@@ -151,7 +155,7 @@ export default function Results() {
           <h1 className="text-3xl font-serif">Results</h1>
           <p className="text-muted-foreground mt-1">View and manage exam results</p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditId(null); setForm({ studentId: "", subjectId: "", marksObtained: "", examType: "final", date: new Date().toISOString().split("T")[0] }); } else if (!editId) { setForm((f) => ({ ...f, date: new Date().toISOString().split("T")[0] })); } }}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditId(null); setForm({ studentId: "", subjectId: "", marksObtained: "", examType: defaultExamType(), date: new Date().toISOString().split("T")[0] }); } else { setExamTypes(getSettings().examTypes); if (!editId) setForm((f) => ({ ...f, date: new Date().toISOString().split("T")[0], examType: defaultExamType() })); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Add Result</Button>
           </DialogTrigger>
@@ -277,14 +281,17 @@ export default function Results() {
                 </div>
                 <div className="grid gap-2">
                   <Label>Exam Type</Label>
-                  <Select value={form.examType} onValueChange={(v) => setForm({ ...form, examType: v as Result["examType"] })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select value={form.examType} onValueChange={(v) => setForm({ ...form, examType: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select exam type" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="midterm">Midterm</SelectItem>
-                      <SelectItem value="final">Final</SelectItem>
-                      <SelectItem value="assignment">Assignment</SelectItem>
+                      {examTypes.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Manage these in <span className="font-medium">Subjects → Exam Types</span>.
+                  </p>
                 </div>
               </div>
               <div className="grid gap-2">
@@ -315,12 +322,15 @@ export default function Results() {
               <Input placeholder="Search by student or subject..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <Select value={filterExam} onValueChange={setFilterExam}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Exams</SelectItem>
-                <SelectItem value="midterm">Midterm</SelectItem>
-                <SelectItem value="final">Final</SelectItem>
-                <SelectItem value="assignment">Assignment</SelectItem>
+                {Array.from(new Set([
+                  ...examTypes.map((t) => t.id),
+                  ...results.map((r) => r.examType),
+                ])).map((id) => (
+                  <SelectItem key={id} value={id}>{getExamTypeLabel(id)}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Badge variant="secondary">{filtered.length} {filtered.length === 1 ? "result" : "results"}</Badge>
@@ -347,7 +357,7 @@ export default function Results() {
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{student ? highlightMatch(student.name, search, hasExactNameMatch) : "Unknown"}</TableCell>
                     <TableCell className="text-foreground">{subject ? highlightMatch(subject.name, search, hasExactSubjectMatch) : "Unknown"}</TableCell>
-                    <TableCell><Badge variant="outline" className="capitalize">{r.examType}</Badge></TableCell>
+                    <TableCell><Badge variant="outline">{getExamTypeLabel(r.examType)}</Badge></TableCell>
                     <TableCell>{r.marksObtained}/{subject?.maxMarks}</TableCell>
                     <TableCell><Badge className={gradeColor(grade)} variant="outline">{grade}</Badge></TableCell>
                     <TableCell>

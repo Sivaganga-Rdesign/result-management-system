@@ -17,12 +17,15 @@ export interface Subject {
   passMarks: number;
 }
 
+// Exam type is now a free-form string (admin-configurable in Settings).
+// Common values: midterm, final, assignment, practical, unit_test, semester,
+// ca1, ca2, project, viva, etc. Stored as a slug-friendly id.
 export interface Result {
   id: string;
   studentId: string;
   subjectId: string;
   marksObtained: number;
-  examType: "midterm" | "final" | "assignment";
+  examType: string;
   date: string;
 }
 
@@ -111,23 +114,46 @@ export function deleteResult(id: string): void {
 }
 
 // Settings
+export interface ExamType {
+  id: string;     // slug, used as Result.examType
+  label: string;  // display name
+}
+
 export interface AppSettings {
   defaultMaxMarks: number;
   defaultPassMarks: number;
   schoolName: string;
+  examTypes: ExamType[];
 }
+
+export const DEFAULT_EXAM_TYPES: ExamType[] = [
+  { id: "midterm", label: "Midterm" },
+  { id: "final", label: "Semester Final" },
+  { id: "assignment", label: "Assignment" },
+  { id: "unit_test", label: "Unit Test" },
+  { id: "practical", label: "Practical" },
+  { id: "ca1", label: "CA1" },
+  { id: "ca2", label: "CA2" },
+  { id: "project", label: "Project" },
+];
 
 const DEFAULT_SETTINGS: AppSettings = {
   defaultMaxMarks: 100,
   defaultPassMarks: 35,
   schoolName: "ResultPro Academy",
+  examTypes: DEFAULT_EXAM_TYPES,
 };
 
 export function getSettings(): AppSettings {
   try {
     const raw = localStorage.getItem("rms_settings");
     if (!raw) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    const merged = { ...DEFAULT_SETTINGS, ...parsed };
+    if (!Array.isArray(merged.examTypes) || merged.examTypes.length === 0) {
+      merged.examTypes = DEFAULT_EXAM_TYPES;
+    }
+    return merged;
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -137,6 +163,22 @@ export function saveSettings(s: Partial<AppSettings>): AppSettings {
   const merged = { ...getSettings(), ...s };
   localStorage.setItem("rms_settings", JSON.stringify(merged));
   return merged;
+}
+
+export function slugifyExamType(label: string): string {
+  return label
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+export function getExamTypeLabel(id: string): string {
+  const types = getSettings().examTypes;
+  const match = types.find((t) => t.id === id);
+  if (match) return match.label;
+  // Fallback: prettify the slug
+  return id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // Seed demo data
@@ -164,7 +206,7 @@ export function seedDemoData(): void {
   ].map((s) => ({ ...s, id: generateId() }));
   save("rms_subjects", subjects);
 
-  const examTypes: Result["examType"][] = ["midterm", "final", "assignment"];
+  const examTypes: string[] = ["midterm", "final", "assignment"];
   const results: Result[] = [];
   for (const student of students) {
     for (const subject of subjects) {

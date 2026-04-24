@@ -357,7 +357,7 @@ export default function Results() {
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{student ? highlightMatch(student.name, search, hasExactNameMatch) : "Unknown"}</TableCell>
                     <TableCell className="text-foreground">{subject ? highlightMatch(subject.name, search, hasExactSubjectMatch) : "Unknown"}</TableCell>
-                    <TableCell><Badge variant="outline" className="capitalize">{r.examType}</Badge></TableCell>
+                    <TableCell><Badge variant="outline">{getExamTypeLabel(r.examType)}</Badge></TableCell>
                     <TableCell>{r.marksObtained}/{subject?.maxMarks}</TableCell>
                     <TableCell><Badge className={gradeColor(grade)} variant="outline">{grade}</Badge></TableCell>
                     <TableCell>

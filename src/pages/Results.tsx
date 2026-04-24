@@ -65,7 +65,7 @@ export default function Results() {
   const [form, setForm] = useState({
     studentId: "",
     subjectId: "",
-    marksObtained: 0,
+    marksObtained: "" as string,
     examType: "final" as Result["examType"],
     date: new Date().toISOString().split("T")[0],
   });
@@ -285,7 +285,7 @@ export default function Results() {
                 <SelectItem value="assignment">Assignment</SelectItem>
               </SelectContent>
             </Select>
-            <Badge variant="secondary">{Math.min(filtered.length, 50)} of {filtered.length} results</Badge>
+            <Badge variant="secondary">{filtered.length} {filtered.length === 1 ? "result" : "results"}</Badge>
           </div>
           <Table>
             <TableHeader>

@@ -90,6 +90,14 @@ export default function Results() {
     return matchSearch && matchExam;
   });
 
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [search, filterExam, results.length]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+
   // If search exactly matches a student name, only highlight that exact one
   const hasExactNameMatch = !!search && students.some((s) => s.name.toLowerCase() === search.toLowerCase());
   const hasExactSubjectMatch = !!search && subjects.some((s) => s.name.toLowerCase() === search.toLowerCase());

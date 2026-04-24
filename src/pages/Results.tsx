@@ -279,7 +279,14 @@ export default function Results() {
               </div>
               <div className="grid gap-2">
                 <Label>Date</Label>
-                <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+                <Input
+                  type="date"
+                  value={form.date}
+                  readOnly
+                  disabled
+                  title="Date is locked to today"
+                />
+                <p className="text-xs text-muted-foreground">Locked to today's date.</p>
               </div>
             </div>
             <DialogFooter>

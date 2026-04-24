@@ -96,7 +96,11 @@ export default function Students() {
           <h1 className="text-3xl font-serif">Students</h1>
           <p className="text-muted-foreground mt-1">Manage student records</p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyForm); setEditId(null); } }}>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportCsv}>
+            <Download className="mr-2 h-4 w-4" />Export CSV
+          </Button>
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyForm); setEditId(null); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Add Student</Button>
           </DialogTrigger>

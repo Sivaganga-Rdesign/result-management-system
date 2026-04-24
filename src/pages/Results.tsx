@@ -281,14 +281,17 @@ export default function Results() {
                 </div>
                 <div className="grid gap-2">
                   <Label>Exam Type</Label>
-                  <Select value={form.examType} onValueChange={(v) => setForm({ ...form, examType: v as Result["examType"] })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select value={form.examType} onValueChange={(v) => setForm({ ...form, examType: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select exam type" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="midterm">Midterm</SelectItem>
-                      <SelectItem value="final">Final</SelectItem>
-                      <SelectItem value="assignment">Assignment</SelectItem>
+                      {examTypes.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Manage these in <span className="font-medium">Subjects → Exam Types</span>.
+                  </p>
                 </div>
               </div>
               <div className="grid gap-2">

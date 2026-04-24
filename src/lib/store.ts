@@ -110,6 +110,35 @@ export function deleteResult(id: string): void {
   save("rms_results", getResults().filter((r) => r.id !== id));
 }
 
+// Settings
+export interface AppSettings {
+  defaultMaxMarks: number;
+  defaultPassMarks: number;
+  schoolName: string;
+}
+
+const DEFAULT_SETTINGS: AppSettings = {
+  defaultMaxMarks: 100,
+  defaultPassMarks: 35,
+  schoolName: "ResultPro Academy",
+};
+
+export function getSettings(): AppSettings {
+  try {
+    const raw = localStorage.getItem("rms_settings");
+    if (!raw) return DEFAULT_SETTINGS;
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+export function saveSettings(s: Partial<AppSettings>): AppSettings {
+  const merged = { ...getSettings(), ...s };
+  localStorage.setItem("rms_settings", JSON.stringify(merged));
+  return merged;
+}
+
 // Seed demo data
 export function seedDemoData(): void {
   if (getStudents().length > 0) return;

@@ -167,10 +167,19 @@ export default function Analytics() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {studentRankings.map((s, i) => (
+              {studentRankings.map((s, i) => {
+                const rankClass =
+                  i === 0
+                    ? "bg-[hsl(45,90%,55%)] text-[hsl(45,90%,15%)] border-[hsl(45,90%,45%)]"
+                    : i === 1
+                    ? "bg-[hsl(0,0%,75%)] text-[hsl(0,0%,15%)] border-[hsl(0,0%,60%)]"
+                    : i === 2
+                    ? "bg-[hsl(28,55%,45%)] text-primary-foreground border-[hsl(28,55%,35%)]"
+                    : "";
+                return (
                 <TableRow key={s.id}>
                   <TableCell>
-                    <Badge variant={i < 3 ? "default" : "outline"} className={i === 0 ? "bg-accent text-accent-foreground" : i === 1 ? "bg-muted" : i === 2 ? "bg-muted" : ""}>
+                    <Badge variant={i < 3 ? "default" : "outline"} className={rankClass}>
                       #{i + 1}
                     </Badge>
                   </TableCell>
@@ -185,7 +194,8 @@ export default function Analytics() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

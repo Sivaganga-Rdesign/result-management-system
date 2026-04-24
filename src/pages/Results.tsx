@@ -70,6 +70,12 @@ export default function Results() {
       toast.error("Please select student and subject");
       return;
     }
+    const subject = subjects.find((s) => s.id === form.subjectId);
+    const max = subject?.maxMarks ?? 100;
+    if (form.marksObtained < 0 || form.marksObtained > max) {
+      toast.error(`Marks must be between 0 and ${max}`);
+      return;
+    }
     if (editId) {
       updateResult(editId, form);
       toast.success("Result updated");

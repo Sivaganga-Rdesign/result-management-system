@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { getStudents, getSubjects, getResults, seedDemoData, type Student, type Subject, type Result } from "@/lib/store";
+import { evaluateResults, statusBadgeClass, ATKT_TOOLTIP } from "@/lib/resultCalc";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceArea, ReferenceDot } from "recharts";
 
 function getGrade(marks: number, max: number): string {
@@ -80,16 +82,10 @@ export default function SearchResult() {
     setSearchParams({});
   };
 
-  const totalMarks = studentResults.reduce((sum, r) => sum + r.marksObtained, 0);
-  const totalMax = studentResults.reduce((sum, r) => {
-    const sub = subjects.find((s) => s.id === r.subjectId);
-    return sum + (sub?.maxMarks || 0);
-  }, 0);
-  const overallPct = totalMax > 0 ? ((totalMarks / totalMax) * 100).toFixed(1) : "0";
-  const passedCount = studentResults.filter((r) => {
-    const sub = subjects.find((s) => s.id === r.subjectId);
-    return sub && r.marksObtained >= sub.passMarks;
-  }).length;
+  const evaluation = evaluateResults(studentResults, subjects);
+  const overallPct = evaluation.percentage.toFixed(1);
+  const passedCount = evaluation.evaluations.filter((e) => e.passed).length;
+  const evalById = new Map(evaluation.evaluations.map((e) => [e.result.id, e]));
 
   return (
     <div className="space-y-8">

@@ -101,12 +101,31 @@ export default function Dashboard() {
           <CardContent className="flex justify-center">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={gradeDist} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={4} dataKey="value" label={({ name, range, value }) => (value > 0 ? `${name} (${range})` : "")}>
+                <Pie
+                  data={gradeDist}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={110}
+                  paddingAngle={4}
+                  dataKey="value"
+                  nameKey="name"
+                  isAnimationActive={false}
+                  label={false}
+                  labelLine={false}
+                >
                   {gradeDist.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number, _n, p: { payload?: { name: string; range: string } }) => [`${value} students`, `Grade ${p.payload?.name} (${p.payload?.range})`]} />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value: string, entry) => {
+                    const payload = entry?.payload as { range?: string } | undefined;
+                    return `Grade ${value} (${payload?.range ?? ""})`;
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

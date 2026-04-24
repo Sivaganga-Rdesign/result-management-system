@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, GraduationCap, User, BookOpen, FileText, Award, TrendingUp, ArrowLeft } from "lucide-react";
+import { Search, GraduationCap, User, BookOpen, FileText, Award, TrendingUp, ArrowLeft, Sparkles, ArrowUpRight, ArrowDownRight, Minus, AlertTriangle } from "lucide-react";
 import { ReportCard } from "@/components/ReportCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { getStudents, getSubjects, getResults, seedDemoData, type Student, type Subject, type Result } from "@/lib/store";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceArea, ReferenceDot } from "recharts";
 
 function getGrade(marks: number, max: number): string {
   const pct = (marks / max) * 100;

@@ -12,6 +12,8 @@ import {
   getStudents, getSubjects, getResults,
   type Student, type Subject, type Result,
 } from "@/lib/store";
+import { evaluateResults, statusBadgeClass, ATKT_TOOLTIP, type FinalStatus } from "@/lib/resultCalc";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function getGrade(pct: number): string {
   if (pct >= 90) return "A+";
@@ -74,28 +76,33 @@ export default function Rankings() {
     return r ? r.marksObtained : null;
   };
 
-  // Per-student aggregate for the chosen exam
+  // Per-student aggregate for the chosen exam (with grace + ATKT applied).
   const studentStats = visibleStudents.map((student) => {
-    let total = 0;
-    let max = 0;
-    let passedAll = true;
-    let hasAny = false;
+    // Build synthetic Result objects for this exam, applying overrides.
+    const examResults: Result[] = [];
     for (const sub of subjects) {
       const m = getMarks(student.id, sub.id, examType);
       if (m === null) continue;
-      hasAny = true;
-      total += m;
-      max += sub.maxMarks;
-      if (m < sub.passMarks) passedAll = false;
+      examResults.push({
+        id: `${student.id}:${sub.id}:${examType}`,
+        studentId: student.id,
+        subjectId: sub.id,
+        marksObtained: m,
+        examType,
+        date: "",
+      });
     }
-    const pct = max > 0 ? (total / max) * 100 : 0;
+    const hasAny = examResults.length > 0;
+    const evalResult = evaluateResults(examResults, subjects);
     return {
       student,
-      total,
-      max,
-      pct,
-      grade: getGrade(pct),
-      passedAll: hasAny && passedAll,
+      total: evalResult.totalMarks,
+      max: evalResult.totalMax,
+      pct: evalResult.percentage,
+      grade: getGrade(evalResult.percentage),
+      status: hasAny ? evalResult.status : ("FAIL" as FinalStatus),
+      failedCount: evalResult.failedCount,
+      graceUsed: evalResult.graceUsed,
       hasAny,
     };
   });
@@ -248,11 +255,24 @@ export default function Rankings() {
                           <Badge variant="outline">{e.grade}</Badge>
                         </TableCell>
                         <TableCell>
-                          {e.passedAll ? (
-                            <Badge variant="outline" className="bg-success/10 text-success border-success/20">Pass</Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Fail</Badge>
-                          )}
+                          <TooltipProvider delayDuration={150}>
+                            <UITooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className={`${statusBadgeClass(e.status)} font-bold gap-1`}>
+                                  {e.status}
+                                  {e.failedCount > 0 && (
+                                    <span className="font-normal opacity-80">· {e.failedCount} failed</span>
+                                  )}
+                                </Badge>
+                              </TooltipTrigger>
+                              {e.status === "ATKT" && (
+                                <TooltipContent>{ATKT_TOOLTIP}</TooltipContent>
+                              )}
+                              {e.graceUsed > 0 && e.status !== "ATKT" && (
+                                <TooltipContent>Grace applied to {e.graceUsed} subject{e.graceUsed > 1 ? "s" : ""}.</TooltipContent>
+                              )}
+                            </UITooltip>
+                          </TooltipProvider>
                         </TableCell>
                       </TableRow>
                     ))}

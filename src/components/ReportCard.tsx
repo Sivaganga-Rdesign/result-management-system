@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSettings, type Student, type Subject, type Result } from "@/lib/store";
+import { evaluateResults } from "@/lib/resultCalc";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -17,8 +18,9 @@ function getGrade(marks: number, max: number): string {
   return "F";
 }
 
-function remarkFor(pct: number, allPassed: boolean): { label: string; color: string } {
-  if (!allPassed) return { label: "Needs Improvement — has unsuccessful subjects", color: "#dc2626" };
+function remarkFor(pct: number, status: "PASS" | "ATKT" | "FAIL"): { label: string; color: string } {
+  if (status === "FAIL") return { label: "Needs Improvement — multiple unsuccessful subjects.", color: "#dc2626" };
+  if (status === "ATKT") return { label: "ATKT — must reappear for failed subjects.", color: "#a16207" };
   if (pct >= 90) return { label: "Outstanding performance — keep it up!", color: "#15803d" };
   if (pct >= 75) return { label: "Excellent — consistent and strong work.", color: "#15803d" };
   if (pct >= 60) return { label: "Good — room to push further.", color: "#1e3a5f" };
@@ -36,22 +38,25 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const settings = getSettings();
 
-  const totalMarks = results.reduce((s, r) => s + r.marksObtained, 0);
-  const totalMax = results.reduce((s, r) => {
-    const sub = subjects.find((x) => x.id === r.subjectId);
-    return s + (sub?.maxMarks || 0);
-  }, 0);
-  const overallPctNum = totalMax > 0 ? (totalMarks / totalMax) * 100 : 0;
+  const evaluation = evaluateResults(results, subjects);
+  const evalById = new Map(evaluation.evaluations.map((e) => [e.result.id, e]));
+  const totalMarks = evaluation.totalMarks;
+  const totalMax = evaluation.totalMax;
+  const overallPctNum = evaluation.percentage;
   const overallPct = overallPctNum.toFixed(1);
   const overallGrade = getGrade(totalMarks, totalMax || 1);
 
-  const passedCount = results.filter((r) => {
-    const sub = subjects.find((s) => s.id === r.subjectId);
-    return sub && r.marksObtained >= sub.passMarks;
-  }).length;
-  const failedCount = results.length - passedCount;
-  const allPassed = failedCount === 0 && results.length > 0;
-  const remark = remarkFor(overallPctNum, allPassed);
+  const passedCount = evaluation.evaluations.filter((e) => e.passed).length;
+  const failedCount = evaluation.failedCount;
+  const finalStatus = evaluation.status;
+  const remark = remarkFor(overallPctNum, finalStatus);
+
+  const statusColors: Record<typeof finalStatus, { bg: string; fg: string; border: string }> = {
+    PASS: { bg: "#dcfce7", fg: "#15803d", border: "#86efac" },
+    ATKT: { bg: "#fef3c7", fg: "#a16207", border: "#fcd34d" },
+    FAIL: { bg: "#fee2e2", fg: "#dc2626", border: "#fca5a5" },
+  };
+  const statusStyle = statusColors[finalStatus];
 
   const handleDownloadPdf = async () => {
     if (!cardRef.current) return;
@@ -128,13 +133,41 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
           <tbody>
             {results.map((r, i) => {
               const sub = subjects.find((s) => s.id === r.subjectId);
-              const grade = sub ? getGrade(r.marksObtained, sub.maxMarks) : "-";
-              const passed = sub ? r.marksObtained >= sub.passMarks : false;
+              const ev = evalById.get(r.id);
+              const effective = ev?.effectiveMarks ?? r.marksObtained;
+              const grade = sub ? getGrade(effective, sub.maxMarks) : "-";
+              const passed = ev?.passed ?? false;
+              const graceApplied = ev?.graceApplied ?? 0;
               return (
                 <tr key={r.id} style={{ backgroundColor: i % 2 === 0 ? "#f8f9fa" : "#ffffff" }}>
-                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", fontWeight: 500 }}>{sub?.name || "Unknown"}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", fontWeight: 500 }}>
+                    {sub?.name || "Unknown"}
+                    {graceApplied > 0 && (
+                      <span style={{
+                        marginLeft: "6px",
+                        padding: "1px 6px",
+                        fontSize: "10px",
+                        borderRadius: "10px",
+                        backgroundColor: "#fef3c7",
+                        color: "#a16207",
+                        border: "1px solid #fcd34d",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                      }}>Grace +{graceApplied}</span>
+                    )}
+                  </td>
                   <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", textTransform: "capitalize" }}>{r.examType}</td>
-                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", fontWeight: 600 }}>{r.marksObtained}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", fontWeight: 600 }}>
+                    {graceApplied > 0 ? (
+                      <span>
+                        <span style={{ color: "#999", textDecoration: "line-through", marginRight: "4px" }}>{r.marksObtained}</span>
+                        {effective}
+                      </span>
+                    ) : (
+                      r.marksObtained
+                    )}
+                  </td>
                   <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center" }}>{sub?.maxMarks}</td>
                   <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", fontWeight: 600, color: grade === "F" ? "#dc2626" : "#1e3a5f" }}>{grade}</td>
                   <td style={{
@@ -151,6 +184,66 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
             })}
           </tbody>
         </table>
+
+        {/* Final Result Banner */}
+        <div style={{
+          padding: "14px 18px",
+          borderRadius: "8px",
+          backgroundColor: statusStyle.bg,
+          border: `1px solid ${statusStyle.border}`,
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "8px",
+        }}>
+          <div>
+            <p style={{ margin: 0, fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "1px" }}>Final Result</p>
+            <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: "22px", color: statusStyle.fg, letterSpacing: "1px" }}>
+              {finalStatus}
+            </p>
+          </div>
+          <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+            <div>{passedCount} of {results.length} subject-exams passed</div>
+            {failedCount > 0 && (
+              <div style={{ color: "#dc2626", fontWeight: 600 }}>
+                {failedCount} failed subject{failedCount > 1 ? "s" : ""}
+              </div>
+            )}
+            {evaluation.graceUsed > 0 && (
+              <div style={{ color: "#a16207" }}>
+                Grace applied to {evaluation.graceUsed} subject{evaluation.graceUsed > 1 ? "s" : ""} (+{evaluation.totalGraceMarks} marks)
+              </div>
+            )}
+            {finalStatus === "ATKT" && (
+              <div style={{ color: "#a16207", fontStyle: "italic", marginTop: "2px" }}>
+                Student must reappear for failed subjects.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Failed Subjects List */}
+        {evaluation.failedEvaluations.length > 0 && (
+          <div style={{
+            padding: "10px 14px",
+            borderRadius: "6px",
+            backgroundColor: "#fef2f2",
+            border: "1px solid #fecaca",
+            marginBottom: "16px",
+            fontSize: "12px",
+          }}>
+            <p style={{ margin: 0, fontWeight: 700, color: "#991b1b", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "11px" }}>
+              Failed Subjects
+            </p>
+            <p style={{ margin: "4px 0 0", color: "#7f1d1d" }}>
+              {evaluation.failedEvaluations
+                .map((e) => `${e.subject.name} (${e.effectiveMarks}/${e.subject.maxMarks}, ${e.result.examType})`)
+                .join(" • ")}
+            </p>
+          </div>
+        )}
 
         {/* Summary */}
         <div style={{
@@ -182,9 +275,9 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
               margin: "2px 0 0",
               fontWeight: 700,
               fontSize: "16px",
-              color: allPassed ? "#16a34a" : "#dc2626",
+              color: statusStyle.fg,
             }}>
-              {allPassed ? "PASS" : "FAIL"}
+              {finalStatus}
             </p>
           </div>
         </div>

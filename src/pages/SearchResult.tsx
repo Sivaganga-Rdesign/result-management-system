@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { getStudents, getSubjects, getResults, seedDemoData, type Student, type Subject, type Result } from "@/lib/store";
+import { evaluateResults, statusBadgeClass, ATKT_TOOLTIP } from "@/lib/resultCalc";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceArea, ReferenceDot } from "recharts";
 
 function getGrade(marks: number, max: number): string {
@@ -80,16 +82,10 @@ export default function SearchResult() {
     setSearchParams({});
   };
 
-  const totalMarks = studentResults.reduce((sum, r) => sum + r.marksObtained, 0);
-  const totalMax = studentResults.reduce((sum, r) => {
-    const sub = subjects.find((s) => s.id === r.subjectId);
-    return sum + (sub?.maxMarks || 0);
-  }, 0);
-  const overallPct = totalMax > 0 ? ((totalMarks / totalMax) * 100).toFixed(1) : "0";
-  const passedCount = studentResults.filter((r) => {
-    const sub = subjects.find((s) => s.id === r.subjectId);
-    return sub && r.marksObtained >= sub.passMarks;
-  }).length;
+  const evaluation = evaluateResults(studentResults, subjects);
+  const overallPct = evaluation.percentage.toFixed(1);
+  const passedCount = evaluation.evaluations.filter((e) => e.passed).length;
+  const evalById = new Map(evaluation.evaluations.map((e) => [e.result.id, e]));
 
   return (
     <div className="space-y-8">
@@ -242,8 +238,30 @@ export default function SearchResult() {
                   <BookOpen className="h-5 w-5 text-primary" />
                   Detailed Results
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="outline">{studentResults.length} results</Badge>
+                  {evaluation.failedCount > 0 && (
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
+                      {evaluation.failedCount} failed subject{evaluation.failedCount > 1 ? "s" : ""}
+                    </Badge>
+                  )}
+                  {evaluation.graceUsed > 0 && (
+                    <Badge variant="outline" className="bg-info/10 text-info border-info/30">
+                      Grace applied to {evaluation.graceUsed} subject{evaluation.graceUsed > 1 ? "s" : ""} (+{evaluation.totalGraceMarks})
+                    </Badge>
+                  )}
+                  <TooltipProvider delayDuration={150}>
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className={`${statusBadgeClass(evaluation.status)} font-bold`}>
+                          {evaluation.status}
+                        </Badge>
+                      </TooltipTrigger>
+                      {evaluation.status === "ATKT" && (
+                        <TooltipContent>{ATKT_TOOLTIP}</TooltipContent>
+                      )}
+                    </UITooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             </CardHeader>
@@ -264,13 +282,34 @@ export default function SearchResult() {
                   <TableBody>
                     {studentResults.map((r) => {
                       const subject = subjects.find((s) => s.id === r.subjectId);
-                      const grade = subject ? getGrade(r.marksObtained, subject.maxMarks) : "-";
-                      const passed = subject ? r.marksObtained >= subject.passMarks : false;
+                      const ev = evalById.get(r.id);
+                      const effective = ev?.effectiveMarks ?? r.marksObtained;
+                      const grade = subject ? getGrade(effective, subject.maxMarks) : "-";
+                      const passed = ev?.passed ?? false;
+                      const isFailedRow = !passed;
                       return (
-                        <TableRow key={r.id}>
+                        <TableRow key={r.id} className={isFailedRow ? "bg-destructive/5" : undefined}>
                           <TableCell className="font-medium">{subject?.name || "Unknown"}</TableCell>
                           <TableCell><Badge variant="outline" className="capitalize">{r.examType}</Badge></TableCell>
-                          <TableCell className="font-semibold">{r.marksObtained}<span className="text-muted-foreground font-normal">/{subject?.maxMarks}</span></TableCell>
+                          <TableCell className="font-semibold">
+                            {ev && ev.graceApplied > 0 ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="text-muted-foreground line-through">{ev.originalMarks}</span>
+                                <span>→</span>
+                                <span>{ev.effectiveMarks}</span>
+                                <span className="text-muted-foreground font-normal">/{subject?.maxMarks}</span>
+                              </span>
+                            ) : (
+                              <>
+                                {r.marksObtained}<span className="text-muted-foreground font-normal">/{subject?.maxMarks}</span>
+                              </>
+                            )}
+                            {ev && ev.graceApplied > 0 && (
+                              <Badge variant="outline" className="ml-2 bg-info/10 text-info border-info/30 text-[10px]">
+                                Grace +{ev.graceApplied}
+                              </Badge>
+                            )}
+                          </TableCell>
                           <TableCell><Badge className={gradeColor(grade)} variant="outline">{grade}</Badge></TableCell>
                           <TableCell>
                             {passed ? (

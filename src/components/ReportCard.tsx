@@ -239,7 +239,7 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
             </p>
             <p style={{ margin: "4px 0 0", color: "#7f1d1d" }}>
               {evaluation.failedEvaluations
-                .map((e) => `${e.subject.name} (${e.effectiveMarks}/${e.subject.maxMarks}, ${e.result.examType})`)
+                .map((e) => `${e.subject.name} (${e.effectiveMarks}/${e.subject.maxMarks}, ${getExamTypeLabel(e.result.examType)})`)
                 .join(" • ")}
             </p>
           </div>

@@ -62,6 +62,33 @@ export default function Students() {
     reload();
   };
 
+  const csvEscape = (v: string) => {
+    if (v == null) return "";
+    const needs = /[",\n]/.test(v);
+    const escaped = v.replace(/"/g, '""');
+    return needs ? `"${escaped}"` : escaped;
+  };
+
+  const handleExportCsv = () => {
+    if (students.length === 0) {
+      toast.error("No students to export");
+      return;
+    }
+    const headers = ["Name", "Admission No", "Roll No", "Email", "Class", "Section", "Created At"];
+    const rows = students.map((s) => [
+      s.name, s.admissionNo, s.rollNo, s.email, s.class, s.section, s.createdAt,
+    ].map(csvEscape).join(","));
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `students_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exported");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

@@ -7,10 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { getSubjects, addSubject, updateSubject, deleteSubject, type Subject } from "@/lib/store";
+import { getSubjects, addSubject, updateSubject, deleteSubject, getSettings, saveSettings, type Subject } from "@/lib/store";
 import { toast } from "sonner";
+import { Settings as SettingsIcon } from "lucide-react";
 
-const emptyForm = { name: "", code: "", maxMarks: 100, passMarks: 35 };
+const buildEmptyForm = () => {
+  const s = getSettings();
+  return { name: "", code: "", maxMarks: s.defaultMaxMarks, passMarks: s.defaultPassMarks };
+};
 
 export default function Subjects() {
   const [subjects, setSubjects] = useState<Subject[]>([]);

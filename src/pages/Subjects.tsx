@@ -87,6 +87,55 @@ export default function Subjects() {
     setForm(buildEmptyForm());
   };
 
+  // ----- Exam types manager -----
+  const addExamType = () => {
+    const label = newExamLabel.trim();
+    if (!label) {
+      toast.error("Enter an exam type name");
+      return;
+    }
+    if (label.length > 40) {
+      toast.error("Name is too long (max 40 chars)");
+      return;
+    }
+    const id = slugifyExamType(label);
+    if (!id) {
+      toast.error("Use letters or numbers in the name");
+      return;
+    }
+    if (examTypes.some((t) => t.id === id)) {
+      toast.error("This exam type already exists");
+      return;
+    }
+    setExamTypes([...examTypes, { id, label }]);
+    setNewExamLabel("");
+  };
+
+  const removeExamType = (id: string) => {
+    if (examTypes.length <= 1) {
+      toast.error("At least one exam type is required");
+      return;
+    }
+    setExamTypes(examTypes.filter((t) => t.id !== id));
+  };
+
+  const renameExamType = (id: string, label: string) => {
+    setExamTypes(examTypes.map((t) => (t.id === id ? { ...t, label } : t)));
+  };
+
+  const handleSaveExamTypes = () => {
+    const cleaned = examTypes
+      .map((t) => ({ ...t, label: t.label.trim() }))
+      .filter((t) => t.label.length > 0);
+    if (cleaned.length === 0) {
+      toast.error("Add at least one exam type");
+      return;
+    }
+    saveSettings({ examTypes: cleaned });
+    toast.success("Exam types saved");
+    setExamTypesOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">

@@ -296,6 +296,59 @@ export default function SearchResult() {
             </CardContent>
           </Card>
 
+          {/* Performance Line Graph */}
+          {studentResults.length > 0 && (() => {
+            const chartData = subjects
+              .map((sub) => {
+                const subRes = studentResults.filter((r) => r.subjectId === sub.id);
+                const get = (type: Result["examType"]) => {
+                  const found = subRes.find((r) => r.examType === type);
+                  return found ? Math.round((found.marksObtained / sub.maxMarks) * 100) : null;
+                };
+                if (subRes.length === 0) return null;
+                return {
+                  name: sub.name,
+                  Midterm: get("midterm"),
+                  Final: get("final"),
+                  Assignment: get("assignment"),
+                };
+              })
+              .filter(Boolean) as Array<{ name: string; Midterm: number | null; Final: number | null; Assignment: number | null }>;
+
+            if (chartData.length === 0) return null;
+
+            return (
+              <Card className="animate-fade-in">
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Performance Across Subjects
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={320}>
+                    <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} label={{ value: "%", angle: -90, position: "insideLeft", style: { fill: "hsl(var(--muted-foreground))" } }} />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                        }}
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="Midterm" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                      <Line type="monotone" dataKey="Final" stroke="hsl(var(--secondary))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                      <Line type="monotone" dataKey="Assignment" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            );
+          })()}
+
           {showReportCard && (
             <Card className="animate-fade-in">
               <CardHeader>

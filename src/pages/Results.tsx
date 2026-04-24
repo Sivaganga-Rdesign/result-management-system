@@ -236,8 +236,8 @@ export default function Results() {
                 const passed = subject ? r.marksObtained >= subject.passMarks : false;
                 return (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">{student?.name || "Unknown"}</TableCell>
-                    <TableCell>{subject?.name || "Unknown"}</TableCell>
+                    <TableCell className="font-medium">{student ? highlightMatch(student.name, search, hasExactNameMatch) : "Unknown"}</TableCell>
+                    <TableCell>{subject ? highlightMatch(subject.name, search, hasExactSubjectMatch) : "Unknown"}</TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{r.examType}</Badge></TableCell>
                     <TableCell>{r.marksObtained}/{subject?.maxMarks}</TableCell>
                     <TableCell><Badge className={gradeColor(grade)} variant="outline">{grade}</Badge></TableCell>

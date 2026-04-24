@@ -83,6 +83,10 @@ export default function Results() {
     return matchSearch && matchExam;
   });
 
+  // If search exactly matches a student name, only highlight that exact one
+  const hasExactNameMatch = !!search && students.some((s) => s.name.toLowerCase() === search.toLowerCase());
+  const hasExactSubjectMatch = !!search && subjects.some((s) => s.name.toLowerCase() === search.toLowerCase());
+
   const handleSubmit = () => {
     if (!form.studentId || !form.subjectId) {
       toast.error("Please select student and subject");

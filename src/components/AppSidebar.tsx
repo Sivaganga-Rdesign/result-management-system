@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, BookOpen, ClipboardList, BarChart3, GraduationCap, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, ClipboardList, BarChart3, GraduationCap, LogOut, Trophy } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { adminLogout } from "@/lib/adminAuth";
@@ -23,6 +23,7 @@ const items = [
   { title: "Subjects", url: "/admin/subjects", icon: BookOpen },
   { title: "Results", url: "/admin/results", icon: ClipboardList },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
+  { title: "Rankings", url: "/admin/rankings", icon: Trophy },
 ];
 
 export function AppSidebar() {

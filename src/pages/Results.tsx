@@ -137,7 +137,7 @@ export default function Results() {
       toast.success("Result added");
     }
     setEditId(null);
-    setForm({ studentId: "", subjectId: "", marksObtained: "", examType: "final", date: new Date().toISOString().split("T")[0] });
+    setForm({ studentId: "", subjectId: "", marksObtained: "", examType: defaultExamType(), date: new Date().toISOString().split("T")[0] });
     setOpen(false);
     reload();
   };

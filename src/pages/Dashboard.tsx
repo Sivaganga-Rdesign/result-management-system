@@ -3,7 +3,7 @@ import { Users, BookOpen, ClipboardList, Award } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/StatCard";
 import { getStudents, getSubjects, getResults, seedDemoData, type Student, type Subject, type Result } from "@/lib/store";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const COLORS = [
   "hsl(220, 60%, 25%)",
@@ -101,12 +101,31 @@ export default function Dashboard() {
           <CardContent className="flex justify-center">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={gradeDist} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={4} dataKey="value" label={({ name, range, value }) => (value > 0 ? `${name} (${range})` : "")}>
+                <Pie
+                  data={gradeDist}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={110}
+                  paddingAngle={4}
+                  dataKey="value"
+                  nameKey="name"
+                  isAnimationActive={false}
+                  label={false}
+                  labelLine={false}
+                >
                   {gradeDist.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number, _n, p: { payload?: { name: string; range: string } }) => [`${value} students`, `Grade ${p.payload?.name} (${p.payload?.range})`]} />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value: string, entry) => {
+                    const payload = entry?.payload as { range?: string } | undefined;
+                    return `Grade ${value} (${payload?.range ?? ""})`;
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

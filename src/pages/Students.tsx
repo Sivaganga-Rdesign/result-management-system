@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -62,6 +62,33 @@ export default function Students() {
     reload();
   };
 
+  const csvEscape = (v: string) => {
+    if (v == null) return "";
+    const needs = /[",\n]/.test(v);
+    const escaped = v.replace(/"/g, '""');
+    return needs ? `"${escaped}"` : escaped;
+  };
+
+  const handleExportCsv = () => {
+    if (students.length === 0) {
+      toast.error("No students to export");
+      return;
+    }
+    const headers = ["Name", "Admission No", "Roll No", "Email", "Class", "Section", "Created At"];
+    const rows = students.map((s) => [
+      s.name, s.admissionNo, s.rollNo, s.email, s.class, s.section, s.createdAt,
+    ].map(csvEscape).join(","));
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `students_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exported");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -69,7 +96,11 @@ export default function Students() {
           <h1 className="text-3xl font-serif">Students</h1>
           <p className="text-muted-foreground mt-1">Manage student records</p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyForm); setEditId(null); } }}>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportCsv}>
+            <Download className="mr-2 h-4 w-4" />Export CSV
+          </Button>
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setForm(emptyForm); setEditId(null); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Add Student</Button>
           </DialogTrigger>
@@ -113,6 +144,7 @@ export default function Students() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card className="animate-fade-in">

@@ -106,7 +106,7 @@ export default function Dashboard() {
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value: number, _n, p: { payload?: { name: string; range: string } }) => [`${value} students`, `Grade ${p.payload?.name} (${p.payload?.range})`]} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

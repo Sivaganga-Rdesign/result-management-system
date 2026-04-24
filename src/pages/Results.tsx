@@ -243,16 +243,25 @@ export default function Results() {
                   <Label>Marks Obtained</Label>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={0}
                     max={form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100}
+                    placeholder="0"
                     value={form.marksObtained}
                     onChange={(e) => {
+                      const raw = e.target.value;
+                      // Allow empty so users can clear and retype
+                      if (raw === "") {
+                        setForm({ ...form, marksObtained: "" });
+                        return;
+                      }
+                      // Strip leading zeros (e.g. "05" -> "5", but keep "0")
+                      const cleaned = raw.replace(/^0+(?=\d)/, "");
+                      const num = Number(cleaned);
+                      if (Number.isNaN(num)) return;
                       const max = form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100;
-                      let val = Number(e.target.value);
-                      if (Number.isNaN(val)) val = 0;
-                      if (val < 0) val = 0;
-                      if (val > max) val = max;
-                      setForm({ ...form, marksObtained: val });
+                      if (num < 0 || num > max) return;
+                      setForm({ ...form, marksObtained: cleaned });
                     }}
                   />
                 </div>

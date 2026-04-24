@@ -144,6 +144,7 @@ export default function Students() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card className="animate-fade-in">

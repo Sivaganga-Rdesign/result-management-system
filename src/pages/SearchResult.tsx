@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, GraduationCap, User, BookOpen, FileText, Award, TrendingUp, ArrowLeft, Sparkles, ArrowUpRight, ArrowDownRight, Minus, AlertTriangle } from "lucide-react";
 import { ReportCard } from "@/components/ReportCard";

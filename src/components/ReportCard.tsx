@@ -133,13 +133,41 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
           <tbody>
             {results.map((r, i) => {
               const sub = subjects.find((s) => s.id === r.subjectId);
-              const grade = sub ? getGrade(r.marksObtained, sub.maxMarks) : "-";
-              const passed = sub ? r.marksObtained >= sub.passMarks : false;
+              const ev = evalById.get(r.id);
+              const effective = ev?.effectiveMarks ?? r.marksObtained;
+              const grade = sub ? getGrade(effective, sub.maxMarks) : "-";
+              const passed = ev?.passed ?? false;
+              const graceApplied = ev?.graceApplied ?? 0;
               return (
                 <tr key={r.id} style={{ backgroundColor: i % 2 === 0 ? "#f8f9fa" : "#ffffff" }}>
-                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", fontWeight: 500 }}>{sub?.name || "Unknown"}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", fontWeight: 500 }}>
+                    {sub?.name || "Unknown"}
+                    {graceApplied > 0 && (
+                      <span style={{
+                        marginLeft: "6px",
+                        padding: "1px 6px",
+                        fontSize: "10px",
+                        borderRadius: "10px",
+                        backgroundColor: "#fef3c7",
+                        color: "#a16207",
+                        border: "1px solid #fcd34d",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                      }}>Grace +{graceApplied}</span>
+                    )}
+                  </td>
                   <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", textTransform: "capitalize" }}>{r.examType}</td>
-                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", fontWeight: 600 }}>{r.marksObtained}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", fontWeight: 600 }}>
+                    {graceApplied > 0 ? (
+                      <span>
+                        <span style={{ color: "#999", textDecoration: "line-through", marginRight: "4px" }}>{r.marksObtained}</span>
+                        {effective}
+                      </span>
+                    ) : (
+                      r.marksObtained
+                    )}
+                  </td>
                   <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center" }}>{sub?.maxMarks}</td>
                   <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", fontWeight: 600, color: grade === "F" ? "#dc2626" : "#1e3a5f" }}>{grade}</td>
                   <td style={{
@@ -156,6 +184,66 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
             })}
           </tbody>
         </table>
+
+        {/* Final Result Banner */}
+        <div style={{
+          padding: "14px 18px",
+          borderRadius: "8px",
+          backgroundColor: statusStyle.bg,
+          border: `1px solid ${statusStyle.border}`,
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "8px",
+        }}>
+          <div>
+            <p style={{ margin: 0, fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "1px" }}>Final Result</p>
+            <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: "22px", color: statusStyle.fg, letterSpacing: "1px" }}>
+              {finalStatus}
+            </p>
+          </div>
+          <div style={{ fontSize: "12px", color: "#555", textAlign: "right" }}>
+            <div>{passedCount} of {results.length} subject-exams passed</div>
+            {failedCount > 0 && (
+              <div style={{ color: "#dc2626", fontWeight: 600 }}>
+                {failedCount} failed subject{failedCount > 1 ? "s" : ""}
+              </div>
+            )}
+            {evaluation.graceUsed > 0 && (
+              <div style={{ color: "#a16207" }}>
+                Grace applied to {evaluation.graceUsed} subject{evaluation.graceUsed > 1 ? "s" : ""} (+{evaluation.totalGraceMarks} marks)
+              </div>
+            )}
+            {finalStatus === "ATKT" && (
+              <div style={{ color: "#a16207", fontStyle: "italic", marginTop: "2px" }}>
+                Student must reappear for failed subjects.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Failed Subjects List */}
+        {evaluation.failedEvaluations.length > 0 && (
+          <div style={{
+            padding: "10px 14px",
+            borderRadius: "6px",
+            backgroundColor: "#fef2f2",
+            border: "1px solid #fecaca",
+            marginBottom: "16px",
+            fontSize: "12px",
+          }}>
+            <p style={{ margin: 0, fontWeight: 700, color: "#991b1b", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "11px" }}>
+              Failed Subjects
+            </p>
+            <p style={{ margin: "4px 0 0", color: "#7f1d1d" }}>
+              {evaluation.failedEvaluations
+                .map((e) => `${e.subject.name} (${e.effectiveMarks}/${e.subject.maxMarks}, ${e.result.examType})`)
+                .join(" • ")}
+            </p>
+          </div>
+        )}
 
         {/* Summary */}
         <div style={{

@@ -100,7 +100,7 @@ export default function Dashboard() {
           <CardContent className="flex justify-center">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={gradeDist} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={4} dataKey="value" label={({ name, value }) => (value > 0 ? `${name}: ${value}` : "")}>
+                <Pie data={gradeDist} cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={4} dataKey="value" label={({ value }) => (value > 0 ? `${value}` : "")}>
                   {gradeDist.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}

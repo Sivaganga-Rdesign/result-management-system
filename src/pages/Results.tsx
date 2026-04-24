@@ -130,7 +130,20 @@ export default function Results() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Marks Obtained</Label>
-                  <Input type="number" value={form.marksObtained} onChange={(e) => setForm({ ...form, marksObtained: Number(e.target.value) })} />
+                  <Input
+                    type="number"
+                    min={0}
+                    max={form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100}
+                    value={form.marksObtained}
+                    onChange={(e) => {
+                      const max = form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100;
+                      let val = Number(e.target.value);
+                      if (Number.isNaN(val)) val = 0;
+                      if (val < 0) val = 0;
+                      if (val > max) val = max;
+                      setForm({ ...form, marksObtained: val });
+                    }}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label>Exam Type</Label>
@@ -173,7 +186,7 @@ export default function Results() {
                 <SelectItem value="assignment">Assignment</SelectItem>
               </SelectContent>
             </Select>
-            <Badge variant="secondary">{filtered.length} results</Badge>
+            <Badge variant="secondary">{Math.min(filtered.length, 50)} of {filtered.length} results</Badge>
           </div>
           <Table>
             <TableHeader>

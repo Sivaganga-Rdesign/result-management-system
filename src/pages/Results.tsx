@@ -61,6 +61,8 @@ export default function Results() {
   const [editId, setEditId] = useState<string | null>(null);
   const [studentPickerOpen, setStudentPickerOpen] = useState(false);
   const [studentQuery, setStudentQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const [form, setForm] = useState({
     studentId: "",

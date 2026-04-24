@@ -55,6 +55,7 @@ export default function Results() {
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [results, setResults] = useState<Result[]>([]);
+  const [examTypes, setExamTypes] = useState<ExamType[]>([]);
   const [search, setSearch] = useState("");
   const [filterExam, setFilterExam] = useState<string>("all");
   const [open, setOpen] = useState(false);
@@ -64,18 +65,21 @@ export default function Results() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  const [form, setForm] = useState({
+  const defaultExamType = () => getSettings().examTypes[0]?.id ?? "final";
+
+  const [form, setForm] = useState(() => ({
     studentId: "",
     subjectId: "",
     marksObtained: "" as string,
-    examType: "final" as Result["examType"],
+    examType: defaultExamType(),
     date: new Date().toISOString().split("T")[0],
-  });
+  }));
 
   const reload = () => {
     setStudents(getStudents());
     setSubjects(getSubjects());
     setResults(getResults());
+    setExamTypes(getSettings().examTypes);
   };
   useEffect(reload, []);
 

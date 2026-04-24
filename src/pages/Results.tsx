@@ -11,6 +11,24 @@ import { Badge } from "@/components/ui/badge";
 import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, type Student, type Subject, type Result } from "@/lib/store";
 import { toast } from "sonner";
 
+function highlightMatch(text: string, query: string, exact: boolean) {
+  if (!query) return text;
+  const q = query.toLowerCase();
+  const t = text.toLowerCase();
+  if (exact && t === q) {
+    return <mark className="bg-secondary text-secondary-foreground rounded px-1">{text}</mark>;
+  }
+  if (!exact && t.startsWith(q)) {
+    return (
+      <>
+        <mark className="bg-secondary/40 text-foreground rounded px-0.5">{text.slice(0, query.length)}</mark>
+        {text.slice(query.length)}
+      </>
+    );
+  }
+  return text;
+}
+
 function getGrade(marks: number, max: number): string {
   const pct = (marks / max) * 100;
   if (pct >= 90) return "A+";
@@ -65,9 +83,19 @@ export default function Results() {
     return matchSearch && matchExam;
   });
 
+  // If search exactly matches a student name, only highlight that exact one
+  const hasExactNameMatch = !!search && students.some((s) => s.name.toLowerCase() === search.toLowerCase());
+  const hasExactSubjectMatch = !!search && subjects.some((s) => s.name.toLowerCase() === search.toLowerCase());
+
   const handleSubmit = () => {
     if (!form.studentId || !form.subjectId) {
       toast.error("Please select student and subject");
+      return;
+    }
+    const subject = subjects.find((s) => s.id === form.subjectId);
+    const max = subject?.maxMarks ?? 100;
+    if (form.marksObtained < 0 || form.marksObtained > max) {
+      toast.error(`Marks must be between 0 and ${max}`);
       return;
     }
     if (editId) {
@@ -130,7 +158,20 @@ export default function Results() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Marks Obtained</Label>
-                  <Input type="number" value={form.marksObtained} onChange={(e) => setForm({ ...form, marksObtained: Number(e.target.value) })} />
+                  <Input
+                    type="number"
+                    min={0}
+                    max={form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100}
+                    value={form.marksObtained}
+                    onChange={(e) => {
+                      const max = form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100;
+                      let val = Number(e.target.value);
+                      if (Number.isNaN(val)) val = 0;
+                      if (val < 0) val = 0;
+                      if (val > max) val = max;
+                      setForm({ ...form, marksObtained: val });
+                    }}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label>Exam Type</Label>
@@ -173,7 +214,7 @@ export default function Results() {
                 <SelectItem value="assignment">Assignment</SelectItem>
               </SelectContent>
             </Select>
-            <Badge variant="secondary">{filtered.length} results</Badge>
+            <Badge variant="secondary">{Math.min(filtered.length, 50)} of {filtered.length} results</Badge>
           </div>
           <Table>
             <TableHeader>
@@ -195,8 +236,8 @@ export default function Results() {
                 const passed = subject ? r.marksObtained >= subject.passMarks : false;
                 return (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">{student?.name || "Unknown"}</TableCell>
-                    <TableCell>{subject?.name || "Unknown"}</TableCell>
+                    <TableCell className="font-medium">{student ? highlightMatch(student.name, search, hasExactNameMatch) : "Unknown"}</TableCell>
+                    <TableCell>{subject ? highlightMatch(subject.name, search, hasExactSubjectMatch) : "Unknown"}</TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{r.examType}</Badge></TableCell>
                     <TableCell>{r.marksObtained}/{subject?.maxMarks}</TableCell>
                     <TableCell><Badge className={gradeColor(grade)} variant="outline">{grade}</Badge></TableCell>

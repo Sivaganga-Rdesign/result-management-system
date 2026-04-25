@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, getSettings, getExamTypeLabel, type Student, type Subject, type Result, type ExamType } from "@/lib/store";
+import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, getSettings, getExamTypeLabel, getEffectiveMarks, type Student, type Subject, type Result, type ExamType } from "@/lib/store";
 import { toast } from "sonner";
 
 function highlightMatch(text: string, query: string, exact: boolean) {

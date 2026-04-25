@@ -45,6 +45,7 @@ export default function Rankings() {
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [results, setResults] = useState<Result[]>([]);
+  const [examTypes, setExamTypes] = useState<ExamTypeDef[]>([]);
   const [examType, setExamType] = useState<ExamType>("final");
   const [classFilter, setClassFilter] = useState<string>("all");
 
@@ -55,6 +56,13 @@ export default function Rankings() {
     setStudents(getStudents());
     setSubjects(getSubjects());
     setResults(getResults());
+    const types = getSettings().examTypes;
+    setExamTypes(types);
+    // Default to first available exam type (or keep "final" if it exists).
+    if (types.length > 0 && !types.some((t) => t.id === examType)) {
+      setExamType(types[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const classes = useMemo(

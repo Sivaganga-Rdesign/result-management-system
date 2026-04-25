@@ -500,9 +500,17 @@ export default function SearchResult() {
                           formatter={(value: number | null, name) => value === null ? ["—", name] : [`${value}%`, name]}
                         />
                         <Legend />
-                        <Line type="monotone" dataKey="Midterm" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
-                        <Line type="monotone" dataKey="Final" stroke="hsl(var(--secondary))" strokeWidth={2.5} dot={{ r: 5 }} connectNulls />
-                        <Line type="monotone" dataKey="Assignment" stroke="hsl(var(--info))" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                        {activeExamTypes.map((t, i) => (
+                          <Line
+                            key={t.id}
+                            type="monotone"
+                            dataKey={t.label}
+                            stroke={lineColors[i % lineColors.length]}
+                            strokeWidth={t.id === "final" ? 2.5 : 2}
+                            dot={{ r: t.id === "final" ? 5 : 4 }}
+                            connectNulls
+                          />
+                        ))}
                         {/* Highlight high/low on Final */}
                         {tHigh && <ReferenceDot x={tHigh.name} y={tHigh.value} r={7} fill="hsl(var(--success))" stroke="hsl(var(--background))" strokeWidth={2} ifOverflow="extendDomain" label={{ value: "High", position: "top", fill: "hsl(var(--success))", fontSize: 11 }} />}
                         {tLow && tLow.name !== tHigh?.name && <ReferenceDot x={tLow.name} y={tLow.value} r={7} fill="hsl(var(--destructive))" stroke="hsl(var(--background))" strokeWidth={2} ifOverflow="extendDomain" label={{ value: "Low", position: "bottom", fill: "hsl(var(--destructive))", fontSize: 11 }} />}

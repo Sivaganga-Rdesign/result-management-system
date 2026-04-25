@@ -291,18 +291,18 @@ export default function SearchResult() {
                       return (
                         <TableRow key={r.id} className={isFailedRow ? "bg-destructive/5" : undefined}>
                           <TableCell className="font-medium">{subject?.name || "Unknown"}</TableCell>
-                          <TableCell><Badge variant="outline" className="capitalize">{r.examType}</Badge></TableCell>
+                          <TableCell><Badge variant="outline" className="capitalize">{getExamTypeLabel(r.examType)}</Badge></TableCell>
                           <TableCell className="font-semibold">
                             {ev && ev.graceApplied > 0 ? (
                               <span className="inline-flex items-center gap-1.5">
-                                <span className="text-muted-foreground line-through">{ev.originalMarks}</span>
+                                <span className="text-muted-foreground line-through">{Math.min(ev.originalMarks, effMax)}</span>
                                 <span>→</span>
-                                <span>{ev.effectiveMarks}</span>
+                                <span>{Math.min(ev.effectiveMarks, effMax)}</span>
                                 <span className="text-muted-foreground font-normal">/{effMax}</span>
                               </span>
                             ) : (
                               <>
-                                {r.marksObtained}<span className="text-muted-foreground font-normal">/{effMax}</span>
+                                {Math.min(r.marksObtained, effMax)}<span className="text-muted-foreground font-normal">/{effMax}</span>
                               </>
                             )}
                             {ev && ev.graceApplied > 0 && (

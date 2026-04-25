@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  getStudents, getSubjects, getResults,
-  type Student, type Subject, type Result,
+  getStudents, getSubjects, getResults, getSettings, getEffectiveMarks,
+  type Student, type Subject, type Result, type ExamType as ExamTypeDef,
 } from "@/lib/store";
 import { evaluateResults, statusBadgeClass, ATKT_TOOLTIP, type FinalStatus } from "@/lib/resultCalc";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";

@@ -338,25 +338,36 @@ export default function SearchResult() {
 
           {/* Smart Analytics + Performance Chart */}
           {studentResults.length > 0 && (() => {
-            // Compute per-subject percentage based on FINAL exam (fallback: best of any)
+            const examTypesCfg = getSettings().examTypes;
+            // Compute per-subject percentage based on FINAL exam (fallback: best of any).
+            // All percentages use EFFECTIVE max per (subject, exam type) so e.g.
+            // "Assignment = 20" doesn't get divided by the subject default of 100.
             const perSubject = subjects
               .map((sub) => {
                 const subRes = studentResults.filter((r) => r.subjectId === sub.id);
                 if (subRes.length === 0) return null;
                 const finalRes = subRes.find((r) => r.examType === "final") ?? subRes[0];
-                const pct = Math.round((finalRes.marksObtained / sub.maxMarks) * 100);
-                const get = (type: Result["examType"]) => {
-                  const found = subRes.find((r) => r.examType === type);
-                  return found ? Math.round((found.marksObtained / sub.maxMarks) * 100) : null;
-                };
+                const finalEff = getEffectiveMarks(sub, finalRes.examType, examTypesCfg);
+                const finalClamped = Math.min(finalRes.marksObtained, finalEff.maxMarks);
+                const pct = finalEff.maxMarks > 0
+                  ? Math.round((finalClamped / finalEff.maxMarks) * 100)
+                  : 0;
+                const perType: Record<string, number | null> = {};
+                for (const t of examTypesCfg) {
+                  const found = subRes.find((r) => r.examType === t.id);
+                  if (!found) { perType[t.id] = null; continue; }
+                  const eff = getEffectiveMarks(sub, t.id, examTypesCfg);
+                  const clamped = Math.min(found.marksObtained, eff.maxMarks);
+                  perType[t.id] = eff.maxMarks > 0
+                    ? Math.round((clamped / eff.maxMarks) * 100)
+                    : 0;
+                }
                 return {
                   subject: sub,
                   pct,
-                  marks: finalRes.marksObtained,
-                  max: sub.maxMarks,
-                  Midterm: get("midterm"),
-                  Final: get("final"),
-                  Assignment: get("assignment"),
+                  marks: finalClamped,
+                  max: finalEff.maxMarks,
+                  perType,
                 };
               })
               .filter((x): x is NonNullable<typeof x> => x !== null);
@@ -369,15 +380,13 @@ export default function SearchResult() {
             const avg = Math.round(perSubject.reduce((a, b) => a + b.pct, 0) / perSubject.length);
             const weak = perSubject.filter((p) => p.pct < 50);
 
-            // Trend: compare Midterm avg vs Final avg
-            const midAvg = (() => {
-              const arr = perSubject.map((p) => p.Midterm).filter((x): x is number => x !== null);
+            // Trend: compare Midterm avg vs Final avg (only if those exam types exist)
+            const avgFor = (typeId: string) => {
+              const arr = perSubject.map((p) => p.perType[typeId]).filter((x): x is number => x !== null && x !== undefined);
               return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-            })();
-            const finalAvg = (() => {
-              const arr = perSubject.map((p) => p.Final).filter((x): x is number => x !== null);
-              return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-            })();
+            };
+            const midAvg = avgFor("midterm");
+            const finalAvg = avgFor("final");
             let trend: { label: string; color: string; Icon: typeof Minus } = { label: "Consistent", color: "text-info", Icon: Minus };
             if (midAvg !== null && finalAvg !== null) {
               const diff = finalAvg - midAvg;
@@ -385,15 +394,30 @@ export default function SearchResult() {
               else if (diff < -3) trend = { label: "Declining", color: "text-destructive", Icon: ArrowDownRight };
             }
 
-            const chartData = perSubject.map((p) => ({
-              name: p.subject.name,
-              Midterm: p.Midterm,
-              Final: p.Final,
-              Assignment: p.Assignment,
-            }));
+            // Only show exam-type lines that have at least one data point.
+            const activeExamTypes = examTypesCfg.filter((t) =>
+              perSubject.some((p) => p.perType[t.id] !== null && p.perType[t.id] !== undefined)
+            );
 
-            // Build a "Trend" series across subjects (Final %) for high/low markers
-            const trendSeries = perSubject.map((p) => ({ name: p.subject.name, value: p.Final ?? p.pct }));
+            const chartData = perSubject.map((p) => {
+              const row: Record<string, string | number | null> = { name: p.subject.name };
+              for (const t of activeExamTypes) row[t.label] = p.perType[t.id] ?? null;
+              return row;
+            });
+
+            // Distinct color per exam type (cycled from semantic tokens).
+            const lineColors = [
+              "hsl(var(--primary))",
+              "hsl(var(--secondary))",
+              "hsl(var(--info))",
+              "hsl(var(--success))",
+              "hsl(var(--warning))",
+              "hsl(var(--destructive))",
+              "hsl(var(--accent))",
+            ];
+
+            // Build a "Trend" series across subjects (Final %, fallback overall pct) for high/low markers
+            const trendSeries = perSubject.map((p) => ({ name: p.subject.name, value: p.perType["final"] ?? p.pct }));
             const tHigh = trendSeries.reduce((m, x) => (x.value > m.value ? x : m), trendSeries[0]);
             const tLow = trendSeries.reduce((m, x) => (x.value < m.value ? x : m), trendSeries[0]);
 

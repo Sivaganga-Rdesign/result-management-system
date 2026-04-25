@@ -130,16 +130,17 @@ export default function Rankings() {
     return { ...entry, rank: lastRank };
   });
 
-  // Subject toppers
+  // Subject toppers — use effective max/pass for the chosen exam type.
   const subjectToppers = subjects.map((sub) => {
+    const eff = getEffectiveMarks(sub, examType, examTypes);
     const entries = visibleStudents
       .map((student) => {
         const m = getMarks(student.id, sub.id, examType);
-        return m === null ? null : { student, marks: m, max: sub.maxMarks };
+        return m === null ? null : { student, marks: m, max: eff.maxMarks };
       })
       .filter((x): x is { student: Student; marks: number; max: number } => x !== null)
       .sort((a, b) => b.marks - a.marks);
-    return { subject: sub, top: entries[0] };
+    return { subject: sub, top: entries[0], effectiveMax: eff.maxMarks };
   });
 
   const hasOverrides = Object.keys(overrides).length > 0;

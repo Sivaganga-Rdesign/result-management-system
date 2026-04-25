@@ -1,7 +1,11 @@
 // Grace Marks + ATKT logic — frontend-only, modular calculator.
 // Used across SearchResult, ReportCard, and Rankings.
+//
+// IMPORTANT: max/pass marks are resolved PER (subject, exam type) using
+// getEffectiveMarks — so admins can set e.g. "Unit Test = 50 / 20" while
+// the subject default stays at "100 / 35".
 
-import type { Result, Subject } from "@/lib/store";
+import { getEffectiveMarks, getSettings, type Result, type Subject, type ExamType } from "@/lib/store";
 
 export const GRACE_MAX_GAP = 5;       // marks below pass that are eligible for grace
 export const GRACE_MAX_SUBJECTS = 2;  // max subjects that can receive grace
@@ -12,6 +16,9 @@ export type FinalStatus = "PASS" | "ATKT" | "FAIL";
 export interface SubjectEval {
   result: Result;
   subject: Subject;
+  // Effective max/pass for THIS exam type (may differ from subject defaults).
+  effectiveMax: number;
+  effectivePass: number;
   originalMarks: number;
   effectiveMarks: number;     // after grace
   graceApplied: number;       // 0 if none
@@ -44,8 +51,12 @@ export interface ResultEvaluation {
  */
 export function evaluateResults(
   results: Result[],
-  subjects: Subject[]
+  subjects: Subject[],
+  examTypes?: ExamType[]
 ): ResultEvaluation {
+  // Resolve exam types once for all lookups (cheaper than calling getSettings per result).
+  const types = examTypes ?? getSettings().examTypes;
+
   // Pair results with their subject; ignore orphan results.
   const paired = results
     .map((r) => {
@@ -54,14 +65,17 @@ export function evaluateResults(
     })
     .filter((x): x is { r: Result; subject: Subject } => x !== null);
 
-  // Build base evaluations (no grace yet).
+  // Build base evaluations (no grace yet) — using effective max/pass per exam type.
   const base: SubjectEval[] = paired.map(({ r, subject }) => {
-    const originallyPassed = r.marksObtained >= subject.passMarks;
-    const gap = subject.passMarks - r.marksObtained;
+    const { maxMarks, passMarks } = getEffectiveMarks(subject, r.examType, types);
+    const originallyPassed = r.marksObtained >= passMarks;
+    const gap = passMarks - r.marksObtained;
     const eligibleForGrace = !originallyPassed && gap > 0 && gap <= GRACE_MAX_GAP;
     return {
       result: r,
       subject,
+      effectiveMax: maxMarks,
+      effectivePass: passMarks,
       originalMarks: r.marksObtained,
       effectiveMarks: r.marksObtained,
       graceApplied: 0,
@@ -74,8 +88,8 @@ export function evaluateResults(
   const candidates = base
     .filter((e) => e.eligibleForGrace)
     .sort((a, b) => {
-      const gapA = a.subject.passMarks - a.originalMarks;
-      const gapB = b.subject.passMarks - b.originalMarks;
+      const gapA = a.effectivePass - a.originalMarks;
+      const gapB = b.effectivePass - b.originalMarks;
       if (gapA !== gapB) return gapA - gapB;
       return a.subject.name.localeCompare(b.subject.name);
     })
@@ -85,10 +99,10 @@ export function evaluateResults(
 
   const evaluations = base.map((e) => {
     if (!graceIds.has(e.result.id)) return e;
-    const grace = e.subject.passMarks - e.originalMarks;
+    const grace = e.effectivePass - e.originalMarks;
     return {
       ...e,
-      effectiveMarks: e.subject.passMarks,
+      effectiveMarks: e.effectivePass,
       graceApplied: grace,
       passed: true,
     };
@@ -100,7 +114,7 @@ export function evaluateResults(
   const totalGraceMarks = evaluations.reduce((s, e) => s + e.graceApplied, 0);
 
   const totalMarks = evaluations.reduce((s, e) => s + e.effectiveMarks, 0);
-  const totalMax = evaluations.reduce((s, e) => s + e.subject.maxMarks, 0);
+  const totalMax = evaluations.reduce((s, e) => s + e.effectiveMax, 0);
   const percentage = totalMax > 0 ? (totalMarks / totalMax) * 100 : 0;
 
   let status: FinalStatus;

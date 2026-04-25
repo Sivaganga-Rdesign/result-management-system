@@ -135,7 +135,8 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
               const sub = subjects.find((s) => s.id === r.subjectId);
               const ev = evalById.get(r.id);
               const effective = ev?.effectiveMarks ?? r.marksObtained;
-              const grade = sub ? getGrade(effective, sub.maxMarks) : "-";
+              const effMax = ev?.effectiveMax ?? sub?.maxMarks ?? 0;
+              const grade = effMax > 0 ? getGrade(effective, effMax) : "-";
               const passed = ev?.passed ?? false;
               const graceApplied = ev?.graceApplied ?? 0;
               return (
@@ -168,7 +169,7 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
                       r.marksObtained
                     )}
                   </td>
-                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center" }}>{sub?.maxMarks}</td>
+                  <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center" }}>{effMax}</td>
                   <td style={{ padding: "8px 12px", borderBottom: "1px solid #e5e7eb", textAlign: "center", fontWeight: 600, color: grade === "F" ? "#dc2626" : "#1e3a5f" }}>{grade}</td>
                   <td style={{
                     padding: "8px 12px",
@@ -239,7 +240,7 @@ export function ReportCard({ student, results, subjects }: ReportCardProps) {
             </p>
             <p style={{ margin: "4px 0 0", color: "#7f1d1d" }}>
               {evaluation.failedEvaluations
-                .map((e) => `${e.subject.name} (${e.effectiveMarks}/${e.subject.maxMarks}, ${getExamTypeLabel(e.result.examType)})`)
+                .map((e) => `${e.subject.name} (${e.effectiveMarks}/${e.effectiveMax}, ${getExamTypeLabel(e.result.examType)})`)
                 .join(" • ")}
             </p>
           </div>

@@ -284,7 +284,8 @@ export default function SearchResult() {
                       const subject = subjects.find((s) => s.id === r.subjectId);
                       const ev = evalById.get(r.id);
                       const effective = ev?.effectiveMarks ?? r.marksObtained;
-                      const grade = subject ? getGrade(effective, subject.maxMarks) : "-";
+                      const effMax = ev?.effectiveMax ?? subject?.maxMarks ?? 0;
+                      const grade = effMax > 0 ? getGrade(effective, effMax) : "-";
                       const passed = ev?.passed ?? false;
                       const isFailedRow = !passed;
                       return (
@@ -297,11 +298,11 @@ export default function SearchResult() {
                                 <span className="text-muted-foreground line-through">{ev.originalMarks}</span>
                                 <span>→</span>
                                 <span>{ev.effectiveMarks}</span>
-                                <span className="text-muted-foreground font-normal">/{subject?.maxMarks}</span>
+                                <span className="text-muted-foreground font-normal">/{effMax}</span>
                               </span>
                             ) : (
                               <>
-                                {r.marksObtained}<span className="text-muted-foreground font-normal">/{subject?.maxMarks}</span>
+                                {r.marksObtained}<span className="text-muted-foreground font-normal">/{effMax}</span>
                               </>
                             )}
                             {ev && ev.graceApplied > 0 && (

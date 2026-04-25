@@ -117,6 +117,11 @@ export function deleteResult(id: string): void {
 export interface ExamType {
   id: string;     // slug, used as Result.examType
   label: string;  // display name
+  // Optional per-exam-type overrides. When set, these REPLACE the subject's
+  // maxMarks / passMarks for any result recorded under this exam type.
+  // Useful for things like "Unit Test = 50 / 20" while subject is 100 / 35.
+  maxMarks?: number;
+  passMarks?: number;
 }
 
 export interface AppSettings {
@@ -179,6 +184,40 @@ export function getExamTypeLabel(id: string): string {
   if (match) return match.label;
   // Fallback: prettify the slug
   return id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Resolve the effective max/pass marks for a given subject + exam type.
+ * Per-exam-type overrides win when set; otherwise the subject's own
+ * maxMarks/passMarks are used. If the exam-type max overrides the subject max
+ * but no passMarks override is provided, we scale the subject's pass ratio
+ * to the new max so things like "Unit Test = 50" stay sensible by default.
+ */
+export function getEffectiveMarks(
+  subject: Pick<Subject, "maxMarks" | "passMarks">,
+  examTypeId: string,
+  examTypes?: ExamType[]
+): { maxMarks: number; passMarks: number } {
+  const types = examTypes ?? getSettings().examTypes;
+  const t = types.find((x) => x.id === examTypeId);
+  const maxMarks =
+    t?.maxMarks && t.maxMarks > 0 ? t.maxMarks : subject.maxMarks;
+
+  let passMarks: number;
+  if (t?.passMarks !== undefined && t.passMarks !== null) {
+    passMarks = t.passMarks;
+  } else if (t?.maxMarks && t.maxMarks > 0 && t.maxMarks !== subject.maxMarks) {
+    // Scale the subject's pass ratio to the new max.
+    const ratio = subject.maxMarks > 0 ? subject.passMarks / subject.maxMarks : 0;
+    passMarks = Math.round(ratio * maxMarks);
+  } else {
+    passMarks = subject.passMarks;
+  }
+
+  // Clamp.
+  if (passMarks > maxMarks) passMarks = maxMarks;
+  if (passMarks < 0) passMarks = 0;
+  return { maxMarks, passMarks };
 }
 
 // Seed demo data

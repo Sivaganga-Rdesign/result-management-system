@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  getStudents, getSubjects, getResults,
-  type Student, type Subject, type Result,
+  getStudents, getSubjects, getResults, getSettings, getEffectiveMarks,
+  type Student, type Subject, type Result, type ExamType as ExamTypeDef,
 } from "@/lib/store";
 import { evaluateResults, statusBadgeClass, ATKT_TOOLTIP, type FinalStatus } from "@/lib/resultCalc";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -45,6 +45,7 @@ export default function Rankings() {
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [results, setResults] = useState<Result[]>([]);
+  const [examTypes, setExamTypes] = useState<ExamTypeDef[]>([]);
   const [examType, setExamType] = useState<ExamType>("final");
   const [classFilter, setClassFilter] = useState<string>("all");
 
@@ -55,6 +56,13 @@ export default function Rankings() {
     setStudents(getStudents());
     setSubjects(getSubjects());
     setResults(getResults());
+    const types = getSettings().examTypes;
+    setExamTypes(types);
+    // Default to first available exam type (or keep "final" if it exists).
+    if (types.length > 0 && !types.some((t) => t.id === examType)) {
+      setExamType(types[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const classes = useMemo(
@@ -93,7 +101,7 @@ export default function Rankings() {
       });
     }
     const hasAny = examResults.length > 0;
-    const evalResult = evaluateResults(examResults, subjects);
+    const evalResult = evaluateResults(examResults, subjects, examTypes);
     return {
       student,
       total: evalResult.totalMarks,
@@ -122,16 +130,17 @@ export default function Rankings() {
     return { ...entry, rank: lastRank };
   });
 
-  // Subject toppers
+  // Subject toppers — use effective max/pass for the chosen exam type.
   const subjectToppers = subjects.map((sub) => {
+    const eff = getEffectiveMarks(sub, examType, examTypes);
     const entries = visibleStudents
       .map((student) => {
         const m = getMarks(student.id, sub.id, examType);
-        return m === null ? null : { student, marks: m, max: sub.maxMarks };
+        return m === null ? null : { student, marks: m, max: eff.maxMarks };
       })
       .filter((x): x is { student: Student; marks: number; max: number } => x !== null)
       .sort((a, b) => b.marks - a.marks);
-    return { subject: sub, top: entries[0] };
+    return { subject: sub, top: entries[0], effectiveMax: eff.maxMarks };
   });
 
   const hasOverrides = Object.keys(overrides).length > 0;
@@ -172,11 +181,16 @@ export default function Rankings() {
             </SelectContent>
           </Select>
           <Select value={examType} onValueChange={(v) => setExamType(v as ExamType)}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Exam type" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="midterm">Midterm</SelectItem>
-              <SelectItem value="final">Final</SelectItem>
-              <SelectItem value="assignment">Assignment</SelectItem>
+              {examTypes.map((t) => {
+                const suffix = t.maxMarks ? ` · ${t.maxMarks}` : "";
+                return (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.label}{suffix}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -211,7 +225,7 @@ export default function Rankings() {
           <Card className="animate-fade-in">
             <CardHeader>
               <CardTitle className="font-serif">
-                Student Rankings ({examType.charAt(0).toUpperCase() + examType.slice(1)})
+                Student Rankings ({examTypes.find((t) => t.id === examType)?.label ?? examType})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -310,7 +324,7 @@ export default function Rankings() {
                         <span className="text-base text-muted-foreground font-normal">/{top.max}</span>
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {((top.marks / top.max) * 100).toFixed(1)}% in {examType}
+                        {((top.marks / top.max) * 100).toFixed(1)}% in {examTypes.find((t) => t.id === examType)?.label ?? examType}
                       </p>
                     </div>
                   ) : (
@@ -346,12 +360,15 @@ export default function Rankings() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Student</TableHead>
-                      {subjects.map((s) => (
-                        <TableHead key={s.id} className="min-w-[120px]">
-                          <div className="font-medium text-foreground">{s.name}</div>
-                          <div className="text-[10px] text-muted-foreground">/{s.maxMarks}</div>
-                        </TableHead>
-                      ))}
+                      {subjects.map((s) => {
+                        const eff = getEffectiveMarks(s, examType, examTypes);
+                        return (
+                          <TableHead key={s.id} className="min-w-[120px]">
+                            <div className="font-medium text-foreground">{s.name}</div>
+                            <div className="text-[10px] text-muted-foreground">/{eff.maxMarks}</div>
+                          </TableHead>
+                        );
+                      })}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -364,6 +381,7 @@ export default function Rankings() {
                         {subjects.map((sub) => {
                           const key = `${student.id}:${sub.id}:${examType}`;
                           const isOverride = key in overrides;
+                          const eff = getEffectiveMarks(sub, examType, examTypes);
                           const value = isOverride
                             ? overrides[key]
                             : results.find((r) => r.studentId === student.id && r.subjectId === sub.id && r.examType === examType)?.marksObtained;
@@ -374,11 +392,11 @@ export default function Rankings() {
                                 id={key}
                                 type="number"
                                 min={0}
-                                max={sub.maxMarks}
+                                max={eff.maxMarks}
                                 step={1}
                                 placeholder="—"
                                 value={value ?? ""}
-                                onChange={(e) => setOverride(student.id, sub.id, examType, e.target.value, sub.maxMarks)}
+                                onChange={(e) => setOverride(student.id, sub.id, examType, e.target.value, eff.maxMarks)}
                                 className={`h-9 ${isOverride ? "border-secondary ring-1 ring-secondary/40" : ""}`}
                               />
                             </TableCell>

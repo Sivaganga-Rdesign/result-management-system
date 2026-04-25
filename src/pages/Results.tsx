@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, getSettings, getExamTypeLabel, type Student, type Subject, type Result, type ExamType } from "@/lib/store";
+import { getStudents, getSubjects, getResults, addResult, updateResult, deleteResult, getSettings, getExamTypeLabel, getEffectiveMarks, type Student, type Subject, type Result, type ExamType } from "@/lib/store";
 import { toast } from "sonner";
 
 function highlightMatch(text: string, query: string, exact: boolean) {
@@ -106,20 +106,32 @@ export default function Results() {
   const hasExactNameMatch = !!search && students.some((s) => s.name.toLowerCase() === search.toLowerCase());
   const hasExactSubjectMatch = !!search && subjects.some((s) => s.name.toLowerCase() === search.toLowerCase());
 
+  // Effective max for the currently selected subject + exam type combo.
+  const currentEffectiveMax = (() => {
+    if (!form.subjectId) return 100;
+    const sub = subjects.find((s) => s.id === form.subjectId);
+    if (!sub) return 100;
+    return getEffectiveMarks(sub, form.examType, examTypes).maxMarks;
+  })();
+
   const handleSubmit = () => {
     if (!form.studentId || !form.subjectId) {
       toast.error("Please select student and subject");
       return;
     }
     const subject = subjects.find((s) => s.id === form.subjectId);
-    const max = subject?.maxMarks ?? 100;
+    if (!subject) {
+      toast.error("Subject not found");
+      return;
+    }
+    const { maxMarks: max } = getEffectiveMarks(subject, form.examType, examTypes);
     const marks = Number(form.marksObtained);
     if (form.marksObtained === "" || Number.isNaN(marks)) {
       toast.error("Please enter marks");
       return;
     }
     if (marks < 0 || marks > max) {
-      toast.error(`Marks must be between 0 and ${max}`);
+      toast.error(`Marks must be between 0 and ${max} for this exam type`);
       return;
     }
     const payload = {
@@ -254,30 +266,44 @@ export default function Results() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label>Marks Obtained</Label>
+                  <Label>
+                    Marks Obtained
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      / {currentEffectiveMax}
+                    </span>
+                  </Label>
                   <Input
                     type="number"
                     inputMode="numeric"
                     min={0}
-                    max={form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100}
+                    max={currentEffectiveMax}
                     placeholder="0"
                     value={form.marksObtained}
                     onChange={(e) => {
                       const raw = e.target.value;
-                      // Allow empty so users can clear and retype
                       if (raw === "") {
                         setForm({ ...form, marksObtained: "" });
                         return;
                       }
-                      // Strip leading zeros (e.g. "05" -> "5", but keep "0")
                       const cleaned = raw.replace(/^0+(?=\d)/, "");
                       const num = Number(cleaned);
                       if (Number.isNaN(num)) return;
-                      const max = form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100;
-                      if (num < 0 || num > max) return;
+                      if (num < 0 || num > currentEffectiveMax) return;
                       setForm({ ...form, marksObtained: cleaned });
                     }}
                   />
+                  {(() => {
+                    const sub = subjects.find((s) => s.id === form.subjectId);
+                    if (!sub) return null;
+                    const eff = getEffectiveMarks(sub, form.examType, examTypes);
+                    if (eff.maxMarks === sub.maxMarks && eff.passMarks === sub.passMarks) return null;
+                    return (
+                      <p className="text-[11px] text-info">
+                        This exam type uses {eff.maxMarks} max / {eff.passMarks} pass
+                        <span className="text-muted-foreground"> (subject default: {sub.maxMarks}/{sub.passMarks})</span>
+                      </p>
+                    );
+                  })()}
                 </div>
                 <div className="grid gap-2">
                   <Label>Exam Type</Label>
@@ -351,14 +377,15 @@ export default function Results() {
               {pageItems.map((r) => {
                 const student = students.find((s) => s.id === r.studentId);
                 const subject = subjects.find((s) => s.id === r.subjectId);
-                const grade = subject ? getGrade(r.marksObtained, subject.maxMarks) : "-";
-                const passed = subject ? r.marksObtained >= subject.passMarks : false;
+                const eff = subject ? getEffectiveMarks(subject, r.examType, examTypes) : null;
+                const grade = eff ? getGrade(r.marksObtained, eff.maxMarks) : "-";
+                const passed = eff ? r.marksObtained >= eff.passMarks : false;
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{student ? highlightMatch(student.name, search, hasExactNameMatch) : "Unknown"}</TableCell>
                     <TableCell className="text-foreground">{subject ? highlightMatch(subject.name, search, hasExactSubjectMatch) : "Unknown"}</TableCell>
                     <TableCell><Badge variant="outline">{getExamTypeLabel(r.examType)}</Badge></TableCell>
-                    <TableCell>{r.marksObtained}/{subject?.maxMarks}</TableCell>
+                    <TableCell>{r.marksObtained}/{eff?.maxMarks ?? subject?.maxMarks}</TableCell>
                     <TableCell><Badge className={gradeColor(grade)} variant="outline">{grade}</Badge></TableCell>
                     <TableCell>
                       {passed ? (

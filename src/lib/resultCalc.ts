@@ -1,7 +1,11 @@
 // Grace Marks + ATKT logic — frontend-only, modular calculator.
 // Used across SearchResult, ReportCard, and Rankings.
+//
+// IMPORTANT: max/pass marks are resolved PER (subject, exam type) using
+// getEffectiveMarks — so admins can set e.g. "Unit Test = 50 / 20" while
+// the subject default stays at "100 / 35".
 
-import type { Result, Subject } from "@/lib/store";
+import { getEffectiveMarks, getSettings, type Result, type Subject, type ExamType } from "@/lib/store";
 
 export const GRACE_MAX_GAP = 5;       // marks below pass that are eligible for grace
 export const GRACE_MAX_SUBJECTS = 2;  // max subjects that can receive grace

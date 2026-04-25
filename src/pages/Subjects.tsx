@@ -223,16 +223,44 @@ export default function Subjects() {
 
                 <div className="grid gap-2">
                   <Label>Current exam types ({examTypes.length})</Label>
-                  <div className="rounded-md border divide-y max-h-72 overflow-auto">
+                  <div className="rounded-md border divide-y max-h-[22rem] overflow-auto">
+                    <div className="grid grid-cols-[1fr_5rem_5rem_auto] gap-2 px-2 py-1.5 text-[11px] uppercase tracking-wider text-muted-foreground bg-muted/40 sticky top-0">
+                      <span>Name</span>
+                      <span>Max</span>
+                      <span>Pass</span>
+                      <span className="sr-only">Remove</span>
+                    </div>
                     {examTypes.map((t) => (
-                      <div key={t.id} className="flex items-center gap-2 p-2">
+                      <div key={t.id} className="grid grid-cols-[1fr_5rem_5rem_auto] gap-2 p-2 items-center">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Input
+                            value={t.label}
+                            maxLength={40}
+                            onChange={(e) => renameExamType(t.id, e.target.value)}
+                            className="h-9"
+                          />
+                          <Badge variant="outline" className="font-mono text-[10px] shrink-0">{t.id}</Badge>
+                        </div>
                         <Input
-                          value={t.label}
-                          maxLength={40}
-                          onChange={(e) => renameExamType(t.id, e.target.value)}
+                          type="number"
+                          min={1}
+                          step={1}
+                          placeholder="—"
+                          value={t.maxMarks ?? ""}
+                          onChange={(e) => updateExamMarks(t.id, "maxMarks", e.target.value)}
                           className="h-9"
+                          title="Max marks for this exam type (overrides subject default)"
                         />
-                        <Badge variant="outline" className="font-mono text-xs shrink-0">{t.id}</Badge>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={1}
+                          placeholder="—"
+                          value={t.passMarks ?? ""}
+                          onChange={(e) => updateExamMarks(t.id, "passMarks", e.target.value)}
+                          className="h-9"
+                          title="Pass marks for this exam type (overrides subject default)"
+                        />
                         <Button
                           type="button"
                           variant="ghost"
@@ -250,8 +278,9 @@ export default function Subjects() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Removing an exam type does not delete results that already use it —
-                    those results keep their original label.
+                    <span className="font-medium">Max / Pass</span> override the subject's defaults
+                    for this exam (e.g. <em>Unit Test = 50 / 20</em>). Leave blank to use the subject's
+                    own values. Removing an exam type does not delete results that already use it.
                   </p>
                 </div>
               </div>

@@ -106,20 +106,32 @@ export default function Results() {
   const hasExactNameMatch = !!search && students.some((s) => s.name.toLowerCase() === search.toLowerCase());
   const hasExactSubjectMatch = !!search && subjects.some((s) => s.name.toLowerCase() === search.toLowerCase());
 
+  // Effective max for the currently selected subject + exam type combo.
+  const currentEffectiveMax = (() => {
+    if (!form.subjectId) return 100;
+    const sub = subjects.find((s) => s.id === form.subjectId);
+    if (!sub) return 100;
+    return getEffectiveMarks(sub, form.examType, examTypes).maxMarks;
+  })();
+
   const handleSubmit = () => {
     if (!form.studentId || !form.subjectId) {
       toast.error("Please select student and subject");
       return;
     }
     const subject = subjects.find((s) => s.id === form.subjectId);
-    const max = subject?.maxMarks ?? 100;
+    if (!subject) {
+      toast.error("Subject not found");
+      return;
+    }
+    const { maxMarks: max } = getEffectiveMarks(subject, form.examType, examTypes);
     const marks = Number(form.marksObtained);
     if (form.marksObtained === "" || Number.isNaN(marks)) {
       toast.error("Please enter marks");
       return;
     }
     if (marks < 0 || marks > max) {
-      toast.error(`Marks must be between 0 and ${max}`);
+      toast.error(`Marks must be between 0 and ${max} for this exam type`);
       return;
     }
     const payload = {

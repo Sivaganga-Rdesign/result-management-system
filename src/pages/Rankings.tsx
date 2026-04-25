@@ -381,6 +381,7 @@ export default function Rankings() {
                         {subjects.map((sub) => {
                           const key = `${student.id}:${sub.id}:${examType}`;
                           const isOverride = key in overrides;
+                          const eff = getEffectiveMarks(sub, examType, examTypes);
                           const value = isOverride
                             ? overrides[key]
                             : results.find((r) => r.studentId === student.id && r.subjectId === sub.id && r.examType === examType)?.marksObtained;
@@ -391,11 +392,11 @@ export default function Rankings() {
                                 id={key}
                                 type="number"
                                 min={0}
-                                max={sub.maxMarks}
+                                max={eff.maxMarks}
                                 step={1}
                                 placeholder="—"
                                 value={value ?? ""}
-                                onChange={(e) => setOverride(student.id, sub.id, examType, e.target.value, sub.maxMarks)}
+                                onChange={(e) => setOverride(student.id, sub.id, examType, e.target.value, eff.maxMarks)}
                                 className={`h-9 ${isOverride ? "border-secondary ring-1 ring-secondary/40" : ""}`}
                               />
                             </TableCell>

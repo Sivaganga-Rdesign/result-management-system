@@ -225,7 +225,7 @@ export default function Rankings() {
           <Card className="animate-fade-in">
             <CardHeader>
               <CardTitle className="font-serif">
-                Student Rankings ({examType.charAt(0).toUpperCase() + examType.slice(1)})
+                Student Rankings ({examTypes.find((t) => t.id === examType)?.label ?? examType})
               </CardTitle>
             </CardHeader>
             <CardContent>

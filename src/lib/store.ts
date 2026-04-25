@@ -117,6 +117,11 @@ export function deleteResult(id: string): void {
 export interface ExamType {
   id: string;     // slug, used as Result.examType
   label: string;  // display name
+  // Optional per-exam-type overrides. When set, these REPLACE the subject's
+  // maxMarks / passMarks for any result recorded under this exam type.
+  // Useful for things like "Unit Test = 50 / 20" while subject is 100 / 35.
+  maxMarks?: number;
+  passMarks?: number;
 }
 
 export interface AppSettings {

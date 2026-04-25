@@ -266,30 +266,44 @@ export default function Results() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label>Marks Obtained</Label>
+                  <Label>
+                    Marks Obtained
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      / {currentEffectiveMax}
+                    </span>
+                  </Label>
                   <Input
                     type="number"
                     inputMode="numeric"
                     min={0}
-                    max={form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100}
+                    max={currentEffectiveMax}
                     placeholder="0"
                     value={form.marksObtained}
                     onChange={(e) => {
                       const raw = e.target.value;
-                      // Allow empty so users can clear and retype
                       if (raw === "") {
                         setForm({ ...form, marksObtained: "" });
                         return;
                       }
-                      // Strip leading zeros (e.g. "05" -> "5", but keep "0")
                       const cleaned = raw.replace(/^0+(?=\d)/, "");
                       const num = Number(cleaned);
                       if (Number.isNaN(num)) return;
-                      const max = form.subjectId ? (subjects.find((s) => s.id === form.subjectId)?.maxMarks ?? 100) : 100;
-                      if (num < 0 || num > max) return;
+                      if (num < 0 || num > currentEffectiveMax) return;
                       setForm({ ...form, marksObtained: cleaned });
                     }}
                   />
+                  {(() => {
+                    const sub = subjects.find((s) => s.id === form.subjectId);
+                    if (!sub) return null;
+                    const eff = getEffectiveMarks(sub, form.examType, examTypes);
+                    if (eff.maxMarks === sub.maxMarks && eff.passMarks === sub.passMarks) return null;
+                    return (
+                      <p className="text-[11px] text-info">
+                        This exam type uses {eff.maxMarks} max / {eff.passMarks} pass
+                        <span className="text-muted-foreground"> (subject default: {sub.maxMarks}/{sub.passMarks})</span>
+                      </p>
+                    );
+                  })()}
                 </div>
                 <div className="grid gap-2">
                   <Label>Exam Type</Label>

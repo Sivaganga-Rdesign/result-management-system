@@ -324,7 +324,7 @@ export default function Rankings() {
                         <span className="text-base text-muted-foreground font-normal">/{top.max}</span>
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {((top.marks / top.max) * 100).toFixed(1)}% in {examType}
+                        {((top.marks / top.max) * 100).toFixed(1)}% in {examTypes.find((t) => t.id === examType)?.label ?? examType}
                       </p>
                     </div>
                   ) : (

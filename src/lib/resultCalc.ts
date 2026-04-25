@@ -16,6 +16,9 @@ export type FinalStatus = "PASS" | "ATKT" | "FAIL";
 export interface SubjectEval {
   result: Result;
   subject: Subject;
+  // Effective max/pass for THIS exam type (may differ from subject defaults).
+  effectiveMax: number;
+  effectivePass: number;
   originalMarks: number;
   effectiveMarks: number;     // after grace
   graceApplied: number;       // 0 if none

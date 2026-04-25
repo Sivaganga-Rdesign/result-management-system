@@ -360,12 +360,15 @@ export default function Rankings() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Student</TableHead>
-                      {subjects.map((s) => (
-                        <TableHead key={s.id} className="min-w-[120px]">
-                          <div className="font-medium text-foreground">{s.name}</div>
-                          <div className="text-[10px] text-muted-foreground">/{s.maxMarks}</div>
-                        </TableHead>
-                      ))}
+                      {subjects.map((s) => {
+                        const eff = getEffectiveMarks(s, examType, examTypes);
+                        return (
+                          <TableHead key={s.id} className="min-w-[120px]">
+                            <div className="font-medium text-foreground">{s.name}</div>
+                            <div className="text-[10px] text-muted-foreground">/{eff.maxMarks}</div>
+                          </TableHead>
+                        );
+                      })}
                     </TableRow>
                   </TableHeader>
                   <TableBody>

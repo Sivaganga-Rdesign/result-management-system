@@ -181,11 +181,16 @@ export default function Rankings() {
             </SelectContent>
           </Select>
           <Select value={examType} onValueChange={(v) => setExamType(v as ExamType)}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Exam type" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="midterm">Midterm</SelectItem>
-              <SelectItem value="final">Final</SelectItem>
-              <SelectItem value="assignment">Assignment</SelectItem>
+              {examTypes.map((t) => {
+                const suffix = t.maxMarks ? ` · ${t.maxMarks}` : "";
+                return (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.label}{suffix}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>

@@ -123,10 +123,51 @@ export default function Subjects() {
     setExamTypes(examTypes.map((t) => (t.id === id ? { ...t, label } : t)));
   };
 
+  const updateExamMarks = (
+    id: string,
+    field: "maxMarks" | "passMarks",
+    raw: string
+  ) => {
+    setExamTypes(
+      examTypes.map((t) => {
+        if (t.id !== id) return t;
+        if (raw === "") {
+          const next = { ...t };
+          delete (next as Partial<ExamType>)[field];
+          return next;
+        }
+        const num = Math.max(0, Math.floor(Number(raw) || 0));
+        return { ...t, [field]: num };
+      })
+    );
+  };
+
   const handleSaveExamTypes = () => {
-    const cleaned = examTypes
-      .map((t) => ({ ...t, label: t.label.trim() }))
-      .filter((t) => t.label.length > 0);
+    const cleaned: ExamType[] = [];
+    for (const t of examTypes) {
+      const label = t.label.trim();
+      if (!label) continue;
+      const next: ExamType = { id: t.id, label };
+      if (t.maxMarks !== undefined) {
+        if (!Number.isInteger(t.maxMarks) || t.maxMarks <= 0) {
+          toast.error(`"${label}": Max marks must be a positive whole number`);
+          return;
+        }
+        next.maxMarks = t.maxMarks;
+      }
+      if (t.passMarks !== undefined) {
+        if (!Number.isInteger(t.passMarks) || t.passMarks < 0) {
+          toast.error(`"${label}": Pass marks must be 0 or more`);
+          return;
+        }
+        if (next.maxMarks !== undefined && t.passMarks > next.maxMarks) {
+          toast.error(`"${label}": Pass marks cannot exceed max marks`);
+          return;
+        }
+        next.passMarks = t.passMarks;
+      }
+      cleaned.push(next);
+    }
     if (cleaned.length === 0) {
       toast.error("Add at least one exam type");
       return;

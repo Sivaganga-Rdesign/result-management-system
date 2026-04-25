@@ -377,14 +377,15 @@ export default function Results() {
               {pageItems.map((r) => {
                 const student = students.find((s) => s.id === r.studentId);
                 const subject = subjects.find((s) => s.id === r.subjectId);
-                const grade = subject ? getGrade(r.marksObtained, subject.maxMarks) : "-";
-                const passed = subject ? r.marksObtained >= subject.passMarks : false;
+                const eff = subject ? getEffectiveMarks(subject, r.examType, examTypes) : null;
+                const grade = eff ? getGrade(r.marksObtained, eff.maxMarks) : "-";
+                const passed = eff ? r.marksObtained >= eff.passMarks : false;
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{student ? highlightMatch(student.name, search, hasExactNameMatch) : "Unknown"}</TableCell>
                     <TableCell className="text-foreground">{subject ? highlightMatch(subject.name, search, hasExactSubjectMatch) : "Unknown"}</TableCell>
                     <TableCell><Badge variant="outline">{getExamTypeLabel(r.examType)}</Badge></TableCell>
-                    <TableCell>{r.marksObtained}/{subject?.maxMarks}</TableCell>
+                    <TableCell>{r.marksObtained}/{eff?.maxMarks ?? subject?.maxMarks}</TableCell>
                     <TableCell><Badge className={gradeColor(grade)} variant="outline">{grade}</Badge></TableCell>
                     <TableCell>
                       {passed ? (

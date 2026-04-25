@@ -378,14 +378,19 @@ export default function Results() {
                 const student = students.find((s) => s.id === r.studentId);
                 const subject = subjects.find((s) => s.id === r.subjectId);
                 const eff = subject ? getEffectiveMarks(subject, r.examType, examTypes) : null;
-                const grade = eff ? getGrade(r.marksObtained, eff.maxMarks) : "-";
-                const passed = eff ? r.marksObtained >= eff.passMarks : false;
+                // Clamp legacy marks against current effective max so the table
+                // never shows nonsense like "79/20" after an admin override.
+                const displayMarks = eff
+                  ? Math.min(Math.max(r.marksObtained, 0), eff.maxMarks)
+                  : r.marksObtained;
+                const grade = eff ? getGrade(displayMarks, eff.maxMarks) : "-";
+                const passed = eff ? displayMarks >= eff.passMarks : false;
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{student ? highlightMatch(student.name, search, hasExactNameMatch) : "Unknown"}</TableCell>
                     <TableCell className="text-foreground">{subject ? highlightMatch(subject.name, search, hasExactSubjectMatch) : "Unknown"}</TableCell>
                     <TableCell><Badge variant="outline">{getExamTypeLabel(r.examType)}</Badge></TableCell>
-                    <TableCell>{r.marksObtained}/{eff?.maxMarks ?? subject?.maxMarks}</TableCell>
+                    <TableCell>{displayMarks}/{eff?.maxMarks ?? subject?.maxMarks}</TableCell>
                     <TableCell><Badge className={gradeColor(grade)} variant="outline">{grade}</Badge></TableCell>
                     <TableCell>
                       {passed ? (

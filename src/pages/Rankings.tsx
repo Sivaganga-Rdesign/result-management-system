@@ -101,7 +101,7 @@ export default function Rankings() {
       });
     }
     const hasAny = examResults.length > 0;
-    const evalResult = evaluateResults(examResults, subjects);
+    const evalResult = evaluateResults(examResults, subjects, examTypes);
     return {
       student,
       total: evalResult.totalMarks,

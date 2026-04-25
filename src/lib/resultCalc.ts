@@ -68,16 +68,20 @@ export function evaluateResults(
   // Build base evaluations (no grace yet) — using effective max/pass per exam type.
   const base: SubjectEval[] = paired.map(({ r, subject }) => {
     const { maxMarks, passMarks } = getEffectiveMarks(subject, r.examType, types);
-    const originallyPassed = r.marksObtained >= passMarks;
-    const gap = passMarks - r.marksObtained;
+    // Clamp stored marks to the current effective max. Legacy results recorded
+    // before an exam-type override (e.g. 79 stored when max was 100, now 20)
+    // would otherwise show as "79/20" and skew percentages above 100%.
+    const clampedMarks = Math.min(Math.max(r.marksObtained, 0), maxMarks);
+    const originallyPassed = clampedMarks >= passMarks;
+    const gap = passMarks - clampedMarks;
     const eligibleForGrace = !originallyPassed && gap > 0 && gap <= GRACE_MAX_GAP;
     return {
       result: r,
       subject,
       effectiveMax: maxMarks,
       effectivePass: passMarks,
-      originalMarks: r.marksObtained,
-      effectiveMarks: r.marksObtained,
+      originalMarks: clampedMarks,
+      effectiveMarks: clampedMarks,
       graceApplied: 0,
       passed: originallyPassed,
       eligibleForGrace,
